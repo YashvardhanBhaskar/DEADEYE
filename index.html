@@ -25,7 +25,7 @@
     // Generate or reuse a persistent session Operator ID for Local Mesh fallback
     const localMeshUid = 'OP-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
 
-    // Built-in Cross-Tab / Same-Origin Live Mesh Fallback (works with zero setup!)
+    // Built-in Cross-Tab / Same-Origin Live Mesh Fallback + Cross-Device Cloud Relay
     const meshChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('deadeye_mp_mesh_v1') : null;
     const meshState = {
       lobbies: new Map(),
@@ -419,6 +419,14 @@
             <span id="hud-quota-label" class="text-slate-300">REMAINING</span>
             <div id="hud-quota-display" class="flex items-center gap-1.5 font-extrabold text-white"></div>
           </div>
+          <!-- Cross-Platform Room Code & Leave Lobby Strip (Visible in Multiplayer) -->
+          <div id="hud-mp-room-strip" class="hidden mt-1.5 pt-1.5 border-t border-sky-500/40 flex items-center justify-between gap-2 text-[10px] font-mono-tech">
+            <div class="flex items-center gap-1.5">
+              <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40 font-extrabold">CROSS-PLAY</span>
+              <span class="text-slate-300">CODE: <strong id="hud-mp-room-code" class="text-amber-300 tracking-wider">------</strong></span>
+            </div>
+            <button id="btn-hud-copy-room" type="button" class="pointer-events-auto px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-600 font-bold cursor-pointer">COPY</button>
+          </div>
           <!-- Summer Season Hydration / Dehydration Countdown -->
           <div id="hud-hydration-box" class="hidden mt-1.5 pt-1.5 border-t border-amber-500/40">
             <div class="flex items-center justify-between text-[10px] font-mono-tech">
@@ -775,15 +783,15 @@
             <div>
               <div class="flex items-center justify-between">
                 <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40">MODE 04</span>
-                <span class="font-mono-tech text-[10px] text-sky-300 font-bold">ONLINE PVP</span>
+                <span class="font-mono-tech text-[10px] text-emerald-300 font-bold">MOBILE &#8596; PC</span>
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">MULTIPLAYER</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Host or join password-protected lobbies! Curve guided bullets around cover to duel live players.
+                Cross-platform PvP! Mobile and PC players can host or join password-protected lobbies via Room Code.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-sky-300 mt-3 pt-2 border-t border-slate-700/70">
-              PASSWORD LOBBIES &bull; PVP
+              CROSS-PLAY &bull; ROOM CODES
             </div>
           </button>
         </div>
@@ -920,19 +928,25 @@
         <!-- Modal Header -->
         <div class="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-slate-700/80">
           <div>
-            <span class="font-mono-tech text-[11px] font-bold tracking-[0.2em] text-sky-300 uppercase">ONLINE GUIDED-BALLISTICS PVP</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">MULTIPLAYER LOBBIES</h2>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-mono-tech text-[11px] font-bold tracking-[0.2em] text-sky-300 uppercase">ONLINE GUIDED-BALLISTICS PVP</span>
+              <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">MOBILE &#8596; PC CROSS-PLAY</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-0.5">MULTIPLAYER LOBBIES</h2>
           </div>
           <button id="btn-close-mp-modal" type="button" class="font-mono-tech text-xs font-extrabold px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 cursor-pointer">
             BACK
           </button>
         </div>
 
-        <!-- Operator Identity Strip (Full User ID + Custom Callsign + Connection Badge) -->
+        <!-- Operator Identity Strip (Full User ID + Custom Callsign + Platform Badge + Connection Badge) -->
         <div class="mt-4 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3.5 flex flex-col gap-3">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex-1">
-              <label for="mp-callsign-input" class="block font-mono-tech text-[10px] font-bold text-amber-300 mb-1">YOUR OPERATOR CALLSIGN</label>
+              <div class="flex items-center gap-2 mb-1">
+                <label for="mp-callsign-input" class="block font-mono-tech text-[10px] font-bold text-amber-300">YOUR OPERATOR CALLSIGN</label>
+                <span id="mp-device-badge" class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40">PLATFORM: PC</span>
+              </div>
               <input id="mp-callsign-input" type="text" maxlength="18" placeholder="DEADEYE-01" class="w-full sm:max-w-xs bg-slate-950 border border-slate-600 focus:border-amber-400 rounded-lg px-3 py-1.5 font-mono-tech text-xs font-bold text-white outline-none" />
             </div>
             <div class="text-left sm:text-right">
@@ -951,11 +965,11 @@
             </div>
           </div>
 
-          <!-- Optional Cloud Server Config Panel (for connecting external devices across the internet) -->
+          <!-- Optional Cloud Server Config Panel (for connecting Mobile & PC across different networks) -->
           <div id="mp-server-cfg-box" class="hidden pt-3 border-t border-slate-800">
-            <div class="flex items-center justify-between gap-2 mb-1.5">
-              <span class="font-mono-tech text-[10px] font-bold text-sky-300">CLOUD SERVER CONFIG JSON (OPTIONAL FOR CROSS-DEVICE INTERNET PLAY)</span>
-              <span class="font-mono-tech text-[10px] text-slate-400">SAME-BROWSER MULTI-TAB WORKS AUTOMATICALLY</span>
+            <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+              <span class="font-mono-tech text-[10px] font-bold text-sky-300">CLOUD SERVER CONFIG JSON (FOR MOBILE + PC ACROSS DIFFERENT DEVICES)</span>
+              <span class="font-mono-tech text-[10px] text-emerald-300">AUTOMATICALLY SYNCED WHEN HOSTED</span>
             </div>
             <div class="flex flex-col sm:flex-row gap-2">
               <input id="mp-server-cfg-input" type="text" placeholder='Paste {"apiKey":"...","authDomain":"...","projectId":"..."}' class="flex-1 bg-slate-950 border border-slate-600 focus:border-sky-400 rounded-lg px-3 py-1.5 font-mono-tech text-[11px] text-white outline-none" />
@@ -1045,20 +1059,29 @@
               </div>
             </div>
 
-            <button id="btn-create-lobby" type="button" class="btn-primary w-full mt-4 py-3 px-4 rounded-xl font-mono-tech text-xs font-extrabold tracking-wider text-slate-950 uppercase cursor-pointer">
-              CREATE &amp; ENTER LOBBY &rarr;
+            <button id="btn-create-lobby" type="button" class="btn-primary mt-4 w-full py-2.5 px-4 rounded-xl font-mono-tech font-extrabold text-xs tracking-wider text-slate-950 uppercase cursor-pointer">
+              CREATE &amp; LAUNCH LOBBY &rarr;
             </button>
           </div>
 
-          <!-- Right (7 cols): Live Lobby Browser + Password Join Box -->
+          <!-- Right (7 cols): Live Lobby Browser + Room Code Quick-Join + Password Join Box -->
           <div class="lg:col-span-7 bg-slate-900/90 border border-slate-700/90 rounded-xl p-4 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between gap-2 mb-2.5">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                  <span class="font-mono-tech text-xs font-extrabold text-sky-300">ACTIVE LOBBIES</span>
+                  <span class="font-mono-tech text-xs font-extrabold text-sky-300">ACTIVE CROSS-PLAY LOBBIES</span>
                 </div>
                 <span id="mp-lobby-count" class="font-mono-tech text-[10px] text-slate-400">0 LOBBIES ONLINE</span>
+              </div>
+
+              <!-- Quick Join by 6-Character Room Code (Mobile & PC Cross-Join) -->
+              <div class="mb-3 bg-slate-950/90 border border-sky-500/40 rounded-xl p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span class="font-mono-tech text-[10px] font-extrabold text-sky-300 shrink-0 px-1">ROOM CODE:</span>
+                <input id="mp-room-code-input" type="text" maxlength="8" placeholder="E.G. A7K9P2" class="flex-1 bg-slate-900 border border-slate-600 focus:border-sky-400 rounded-lg px-3 py-1.5 font-mono-tech text-xs font-bold uppercase tracking-widest text-white outline-none" />
+                <button id="btn-join-by-code" type="button" class="font-mono-tech text-xs font-extrabold px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 cursor-pointer shrink-0">
+                  JOIN BY CODE
+                </button>
               </div>
 
               <!-- Inline Password Prompt when Joining a Locked Lobby -->
@@ -1076,13 +1099,13 @@
               </div>
 
               <!-- Scrollable List of Lobbies -->
-              <div id="mp-lobbies-list" class="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+              <div id="mp-lobbies-list" class="space-y-2 max-h-[240px] overflow-y-auto pr-1">
                 <div class="text-xs text-slate-400 font-mono-tech py-8 text-center">Searching for active lobbies...</div>
               </div>
             </div>
 
             <div class="font-mono-tech text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-800">
-              TIP: Share your Lobby Name &amp; Password with friends so only they can join your match!
+              CROSS-PLAY: Mobile &amp; PC players share the exact same lobbies—enter the 6-letter Room Code or tap JOIN!
             </div>
           </div>
         </div>
@@ -1714,6 +1737,7 @@
 
         // Mobile Detection & Virtual Touch Controls State
         this.isMobileDevice = this._detectMobileDevice();
+        this.platformTag = this.isMobileDevice ? 'MOBILE' : 'PC';
         this.mobileMoveX = 0;
         this.mobileMoveZ = 0;
         this.mobileSprint = false;
@@ -3478,26 +3502,16 @@
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('mp-lobby-modal').classList.add('hidden');
         document.getElementById('hud-layer').classList.remove('hidden');
-        document.getElementById('damage-vignette').style.opacity = '0';
-        document.getElementById('mp-killfeed').classList.add('hidden');
+        document.getElementById('hud-mp-room-strip').classList.add('hidden');
 
         this._clearDynamicEntities();
+        this._scatterFieldAmmoCrates();
 
         this.score = 0;
         this.headshots = 0;
         this.shotsFired = 0;
         this.shotsHit = 0;
         this._applyUpgradeStats(true);
-
-        // Set initial player spawn position (Map-specific Vantage Perch for Crowd Sniper)
-        this._placePlayerForModeAndMap();
-        this.shooterYaw = 0;
-        this.shooterPitch = this.activeMode === 'CROWD_SNIPER' && this.activeMap !== 'CLASSIC' ? -0.24 : -0.02;
-        this.scopeToggle = false;
-        this.isScoped = false;
-        this.playerGroup.visible = true;
-
-        this._scatterFieldAmmoCrates();
 
         const radioPanel = document.getElementById('radio-intel-panel');
         const hpSection = document.getElementById('hud-health-section');
@@ -3506,61 +3520,50 @@
           radioPanel.classList.add('hidden');
           hpSection.classList.remove('hidden');
           this.combatWave = 1;
+          this.playerPos.set(0, terrainHeight(0, 44, this.activeMap), 44);
+          this.shooterYaw = 0;
+          this.shooterPitch = -0.02;
           this._spawnCombatWave(1);
-          this._spawnAmbientWildlife(6, 0, 0);
-          this._triggerCallout(`COMBAT OPS // ${this.activeMap}`, 'TAKE COVER & NEUTRALIZE ARMED HOSTILES', 'text-rose-400');
+          this._spawnAmbientWildlife(4, 2, 1);
+          this._triggerCallout('COMBAT OPS // WAVE 1', 'HOSTILE SQUAD INBOUND — USE COVER!', 'text-rose-400');
         } else if (mode === 'WILDLIFE_HUNT') {
           radioPanel.classList.add('hidden');
           hpSection.classList.add('hidden');
           this.huntQuota = { DEER: 3, BOAR: 3 };
-          this._spawnAmbientWildlife(6, 4, 4);
-          this._triggerCallout(`WILDLIFE HUNT // ${this.activeMap}`, 'HUNT 3 STAGS & 3 BOARS • SPARE PROTECTED HARES', 'text-amber-300');
+          this.playerPos.set(0, terrainHeight(0, 44, this.activeMap), 44);
+          this.shooterYaw = 0;
+          this.shooterPitch = -0.02;
+          this._spawnAmbientWildlife(5, 4, 4);
+          this._triggerCallout('WILDLIFE HUNT', 'HARVEST 3 STAGS & 3 BOARS — SPARE HARES!', 'text-amber-300');
         } else if (mode === 'CROWD_SNIPER') {
           radioPanel.classList.remove('hidden');
           hpSection.classList.add('hidden');
+          if (this.activeMap === 'CITY') {
+            this.playerPos.set(0, terrainHeight(0, 34, 'CITY') + 13.5, 34);
+            this.shooterYaw = 0;
+            this.shooterPitch = -0.34;
+          } else if (this.activeMap === 'TOWN') {
+            this.playerPos.set(0, terrainHeight(0, 32, 'TOWN') + 9.68, 32);
+            this.shooterYaw = 0;
+            this.shooterPitch = -0.26;
+          } else {
+            this.playerPos.set(0, terrainHeight(0, 36, 'CLASSIC'), 36);
+            this.shooterYaw = 0;
+            this.shooterPitch = -0.06;
+          }
           this._spawnCrowdSniperScenario();
-          const perchMsg =
-            this.activeMap === 'CITY'
-              ? 'ROOFTOP OVERLOOK • POSITION LOCKED'
-              : this.activeMap === 'TOWN'
-              ? 'WATCHTOWER NEST • POSITION LOCKED'
-              : 'HIDDEN BURROW • POSITION LOCKED';
-          this._triggerCallout(`CROWD SNIPER // ${this.activeMap}`, perchMsg, 'text-emerald-300');
+          this._spawnAmbientWildlife(3, 1, 0);
+          this._triggerCallout('SNIPER OVERWATCH', 'POSITION LOCKED — LISTEN TO RADIO INTEL!', 'text-emerald-300');
         }
 
         this._updateScopeUI(false);
         this._updateShooterAndCamera(0.016);
         this._updateHUD();
-        this._refreshCreditsUI();
         this.state = 'SHOOTER_MODE';
         this._updateMobileControlsVisibility();
         if (!this.isMobileDevice) {
           this._requestPointerLockSafe();
         }
-      }
-
-      _placePlayerForModeAndMap() {
-        if (this.activeMode === 'CROWD_SNIPER') {
-          if (this.activeMap === 'CITY') {
-            // Placed on top of the overlook building roof at (0, roofTopY, 31.2)
-            const baseY = terrainHeight(0, 34, 'CITY');
-            this.playerPos.set(0, baseY + 13.5, 31.2);
-            return;
-          }
-          if (this.activeMap === 'TOWN') {
-            // Placed inside the tall watchtower's crow's nest at (0, nestFloorY, 31.2)
-            const baseY = terrainHeight(0, 32, 'TOWN');
-            this.playerPos.set(0, baseY + 9.68, 31.2);
-            return;
-          }
-          // CLASSIC map: hidden inside the camouflaged earthen sniper burrow at (0, y, 36)
-          this.playerPos.set(0, terrainHeight(0, 36, 'CLASSIC'), 36);
-          return;
-        }
-
-        // Standard mobile deployment spawn for Combat Ops / Wildlife Hunt
-        const spawnZ = this.activeMap === 'CITY' ? 24 : 44;
-        this.playerPos.set(0, terrainHeight(0, spawnZ, this.activeMap), spawnZ);
       }
 
       openModeSelection() {
@@ -3575,7 +3578,16 @@
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('title-screen').classList.add('hidden');
         document.getElementById('pause-modal').classList.add('hidden');
+        document.getElementById('hud-mp-room-strip').classList.add('hidden');
         document.getElementById('start-screen').classList.remove('hidden');
+      }
+
+      _escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
       }
 
       _triggerHitFeedback(worldPos, labelText, colorHex = '#fbbf24', isHeadshot = false) {
@@ -5761,6 +5773,21 @@
           document.body.removeChild(tempInput);
           this._setMpStatus('Copied full Operator ID to clipboard!', 'emerald');
         });
+        document.getElementById('btn-hud-copy-room').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!this.mpCurrentLobby || !this.mpCurrentLobby.roomCode) return;
+          const tempInput = document.createElement('input');
+          tempInput.value = this.mpCurrentLobby.roomCode;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+          this._triggerCallout(`ROOM CODE COPIED: ${this.mpCurrentLobby.roomCode}`, 'SHARE WITH MOBILE OR PC FRIENDS', 'text-sky-300');
+        });
+        document.getElementById('btn-join-by-code').addEventListener('click', () => this.joinLobbyByRoomCode());
+        document.getElementById('mp-room-code-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.joinLobbyByRoomCode();
+        });
         document.getElementById('mp-callsign-input').addEventListener('input', (e) => {
           const val = e.target.value.trim();
           if (val) {
@@ -6236,6 +6263,13 @@
         const bridge = window.mpBridge;
         const badge = document.getElementById('mp-conn-badge');
         const uidEl = document.getElementById('mp-full-uid');
+        const devBadge = document.getElementById('mp-device-badge');
+        if (devBadge) {
+          devBadge.textContent = `PLATFORM: ${this.platformTag}`;
+          devBadge.className = this.isMobileDevice
+            ? 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40'
+            : 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40';
+        }
         if (!bridge) return;
 
         const mode = bridge.getMode();
@@ -6248,10 +6282,10 @@
 
         if (badge) {
           if (mode === 'CLOUD') {
-            badge.textContent = 'CLOUD SERVER CONNECTED';
+            badge.textContent = 'CROSS-DEVICE CLOUD CONNECTED';
             badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
           } else if (mode === 'LOCAL_MESH') {
-            badge.textContent = 'LIVE MULTI-TAB MESH READY';
+            badge.textContent = 'LIVE CROSS-PLAY MESH READY';
             badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40';
           } else {
             badge.textContent = 'CONNECTING...';
@@ -6375,6 +6409,10 @@
           const maxP = lobby.maxPlayers || 6;
           const isLocked = Boolean(lobby.password && lobby.password.length > 0);
           const isFull = count >= maxP;
+          const roomCode = lobby.roomCode || lobby.id.slice(-6).toUpperCase();
+          const mobileCount = playersInLobby.filter((p) => p.platform === 'MOBILE').length;
+          const pcCount = playersInLobby.filter((p) => p.platform !== 'MOBILE').length;
+          const platformMix = count > 0 ? ` (${pcCount} PC / ${mobileCount} MOB)` : '';
 
           const row = document.createElement('div');
           row.className = 'bg-slate-950/90 border border-slate-700/90 rounded-xl p-3 flex items-center justify-between gap-3';
@@ -6382,6 +6420,7 @@
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-bold text-sm text-white truncate">${this._escapeHtml(lobby.name || 'Private Valley Lobby')}</span>
+                <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40">CODE: ${this._escapeHtml(roomCode)}</span>
                 ${
                   isLocked
                     ? '<span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">&#128274; PASSWORD</span>'
@@ -6389,11 +6428,11 @@
                 }
               </div>
               <div class="font-mono-tech text-[10px] text-slate-400 mt-1">
-                HOST: <span class="text-slate-200">${this._escapeHtml(lobby.hostName || 'HOST')}</span> &bull; ${this._escapeHtml(lobby.map || 'CLASSIC')} &bull; ${this._escapeHtml(lobby.season || 'SPRING')}${lobby.season === 'SUMMER' ? ` (${lobby.summerTime || 180}S)` : ''} &bull; ${lobby.killLimit || 10} KILLS
+                HOST: <span class="text-slate-200">${this._escapeHtml(lobby.hostName || 'HOST')}</span> [${this._escapeHtml(lobby.hostPlatform || 'PC')}] &bull; ${this._escapeHtml(lobby.map || 'CLASSIC')} &bull; ${this._escapeHtml(lobby.season || 'SPRING')}${lobby.season === 'SUMMER' ? ` (${lobby.summerTime || 180}S)` : ''} &bull; ${lobby.killLimit || 10} KILLS
               </div>
             </div>
             <div class="flex items-center gap-2.5 shrink-0">
-              <span class="font-mono-tech text-xs font-extrabold ${isFull ? 'text-rose-400' : 'text-sky-300'}">${count}/${maxP}</span>
+              <span class="font-mono-tech text-xs font-extrabold ${isFull ? 'text-rose-400' : 'text-sky-300'}">${count}/${maxP}${platformMix}</span>
               <button type="button" ${isFull ? 'disabled' : ''} class="font-mono-tech text-[11px] font-extrabold px-3.5 py-2 rounded-lg uppercase transition ${
                 isFull
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
@@ -6410,13 +6449,30 @@
           container.appendChild(row);
         });
       }
+      _generateRoomCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let out = '';
+        for (let i = 0; i < 6; i++) {
+          out += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return out;
+      }
 
-      _escapeHtml(str) {
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
+      joinLobbyByRoomCode() {
+        const codeInp = document.getElementById('mp-room-code-input');
+        const code = (codeInp?.value || '').trim().toUpperCase();
+        if (!code) {
+          this._setMpStatus('Enter a 6-character Room Code from a PC or Mobile host.', 'rose');
+          return;
+        }
+        const match = this.mpLobbies.find(
+          (l) => (l.roomCode || l.id.slice(-6).toUpperCase()).toUpperCase() === code
+        );
+        if (!match) {
+          this._setMpStatus(`No active lobby found with Room Code "${code}". Check the code or server connection.`, 'rose');
+          return;
+        }
+        this._initiateJoinLobby(match);
       }
 
       async createMultiplayerLobby() {
@@ -6434,14 +6490,17 @@
         const lobbySeason = document.getElementById('mp-create-season').value || 'SPRING';
         const summerTime = parseInt(document.getElementById('mp-create-summer-time').value, 10) || 180;
         const lobbyName = nameInp || `${this.mpCallsign}'S LOBBY`;
+        const roomCode = this._generateRoomCode();
 
         try {
           const { addDoc } = bridge.fn;
           const docRef = await addDoc(bridge.lobbiesCol(), {
             name: lobbyName,
+            roomCode,
             password: passInp,
             hostId: this.mpUser.uid,
             hostName: this.mpCallsign,
+            hostPlatform: this.platformTag,
             maxPlayers,
             killLimit,
             map: lobbyMap,
@@ -6455,9 +6514,11 @@
           const lobbyObj = {
             id: docRef.id,
             name: lobbyName,
+            roomCode,
             password: passInp,
             hostId: this.mpUser.uid,
             hostName: this.mpCallsign,
+            hostPlatform: this.platformTag,
             maxPlayers,
             killLimit,
             map: lobbyMap,
@@ -6535,6 +6596,13 @@
         document.getElementById('hud-health-section').classList.remove('hidden');
         document.getElementById('mp-killfeed').classList.remove('hidden');
         document.getElementById('mp-killfeed').innerHTML = '';
+
+        const roomStrip = document.getElementById('hud-mp-room-strip');
+        const roomCodeEl = document.getElementById('hud-mp-room-code');
+        if (roomStrip && roomCodeEl) {
+          roomCodeEl.textContent = lobby.roomCode || lobby.id.slice(-6).toUpperCase();
+          roomStrip.classList.remove('hidden');
+        }
 
         this._clearDynamicEntities();
         this._scatterFieldAmmoCrates();
@@ -6630,6 +6698,8 @@
         this.mpRemotePlayers.clear();
         const kf = document.getElementById('mp-killfeed');
         if (kf) kf.classList.add('hidden');
+        const roomStrip = document.getElementById('hud-mp-room-strip');
+        if (roomStrip) roomStrip.classList.add('hidden');
       }
 
       _pushMpKillFeed(text) {
@@ -6703,6 +6773,7 @@
             lobbyId: this.mpCurrentLobby.id,
             uid: this.mpUser.uid,
             callsign: this.mpCallsign,
+            platform: this.platformTag,
             x: Number(this.playerPos.x.toFixed(2)),
             y: Number(this.playerPos.y.toFixed(2)),
             z: Number(this.playerPos.z.toFixed(2)),
@@ -6725,7 +6796,7 @@
         } catch (e) {}
       }
 
-      _createRemotePlayerMesh(uid, callsign) {
+      _createRemotePlayerMesh(uid, callsign, platform = 'PC') {
         const root = new THREE.Group();
 
         const palette = [0x2563eb, 0xdc2626, 0x059669, 0x9333ea, 0xea580c, 0x0891b2];
@@ -6782,24 +6853,25 @@
         const rightLeg = makeLeg(0.14);
 
         const labelCanvas = document.createElement('canvas');
-        labelCanvas.width = 256;
+        labelCanvas.width = 320;
         labelCanvas.height = 64;
         const lctx = labelCanvas.getContext('2d');
-        lctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
-        lctx.fillRect(16, 12, 224, 40);
-        lctx.strokeStyle = '#38bdf8';
+        lctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        lctx.fillRect(10, 10, 300, 44);
+        lctx.strokeStyle = platform === 'MOBILE' ? '#fbbf24' : '#38bdf8';
         lctx.lineWidth = 3;
-        lctx.strokeRect(16, 12, 224, 40);
+        lctx.strokeRect(10, 10, 300, 44);
         lctx.fillStyle = '#ffffff';
-        lctx.font = 'bold 22px monospace';
+        lctx.font = 'bold 20px monospace';
         lctx.textAlign = 'center';
         lctx.textBaseline = 'middle';
-        lctx.fillText(callsign || 'PLAYER', 128, 32);
+        const tag = platform === 'MOBILE' ? '[MOB]' : '[PC]';
+        lctx.fillText(`${tag} ${callsign || 'PLAYER'}`, 160, 32);
 
         const tex = new THREE.CanvasTexture(labelCanvas);
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
         sprite.position.set(0, 2.35, 0);
-        sprite.scale.set(2.2, 0.55, 1);
+        sprite.scale.set(2.5, 0.55, 1);
         root.add(sprite);
 
         const bMesh = new THREE.Mesh(
@@ -6853,7 +6925,7 @@
 
           let rp = this.mpRemotePlayers.get(p.uid);
           if (!rp) {
-            rp = this._createRemotePlayerMesh(p.uid, p.callsign);
+            rp = this._createRemotePlayerMesh(p.uid, p.callsign, p.platform || 'PC');
             rp.root.position.set(p.x || 0, p.y || 0, p.z || 0);
             this.mpRemotePlayers.set(p.uid, rp);
           }
