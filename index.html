@@ -10,24 +10,114 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- Firebase Auth & Firestore Bridge for Multiplayer Lobbies & Cloud Profile -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'deadeye-field-ops';
     let db = null;
     let auth = null;
     let currentUser = null;
     let initError = null;
+    let connectionMode = 'CONNECTING'; // 'CLOUD' | 'LOCAL_MESH' | 'OFFLINE'
+    let onStateChangeCallback = null;
 
-    const readyPromise = (async () => {
-      try {
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          initError = 'Cloud server config not active in this sandbox.';
-          return null;
+    // Generate or reuse a persistent session Operator ID for Local Mesh fallback
+    const localMeshUid = 'OP-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+
+    // Built-in Cross-Tab / Same-Origin Live Mesh Fallback (works with zero setup!)
+    const meshChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('deadeye_mp_mesh_v1') : null;
+    const meshState = {
+      lobbies: new Map(),
+      players: new Map(),
+      hits: new Map(),
+      profile: null
+    };
+    const meshListeners = {
+      lobbies: new Set(),
+      players: new Set(),
+      hits: new Set()
+    };
+
+    function notifyMesh(colName) {
+      const listeners = meshListeners[colName];
+      if (!listeners) return;
+      const docs = [];
+      meshState[colName].forEach((val, key) => {
+        docs.push({ id: key, data: () => ({ ...val }) });
+      });
+      const snap = {
+        forEach: (cb) => docs.forEach(cb)
+      };
+      listeners.forEach((cb) => {
+        try { cb(snap); } catch (e) {}
+      });
+    }
+
+    if (meshChannel) {
+      meshChannel.onmessage = (ev) => {
+        const msg = ev.data;
+        if (!msg || !msg.type) return;
+        if (msg.type === 'SYNC_REQUEST') {
+          // Respond with all our known state so newly opened tabs immediately see active lobbies
+          meshChannel.postMessage({
+            type: 'SYNC_STATE',
+            lobbies: Array.from(meshState.lobbies.entries()),
+            players: Array.from(meshState.players.entries())
+          });
+        } else if (msg.type === 'SYNC_STATE') {
+          let changedL = false;
+          let changedP = false;
+          (msg.lobbies || []).forEach(([k, v]) => {
+            const cur = meshState.lobbies.get(k);
+            if (!cur || (v.updatedAt || 0) >= (cur.updatedAt || 0)) {
+              meshState.lobbies.set(k, v);
+              changedL = true;
+            }
+          });
+          (msg.players || []).forEach(([k, v]) => {
+            const cur = meshState.players.get(k);
+            if (!cur || (v.updatedAt || 0) >= (cur.updatedAt || 0)) {
+              meshState.players.set(k, v);
+              changedP = true;
+            }
+          });
+          if (changedL) notifyMesh('lobbies');
+          if (changedP) notifyMesh('players');
+        } else if (msg.type === 'SET_DOC') {
+          meshState[msg.col].set(msg.id, msg.data);
+          notifyMesh(msg.col);
+        } else if (msg.type === 'DEL_DOC') {
+          meshState[msg.col].delete(msg.id);
+          notifyMesh(msg.col);
         }
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
+      };
+    }
+
+    function activateLocalMeshFallback(reasonMsg = null) {
+      connectionMode = 'LOCAL_MESH';
+      initError = reasonMsg;
+      currentUser = { uid: localMeshUid, isLocalMesh: true };
+      if (meshChannel) {
+        meshChannel.postMessage({ type: 'SYNC_REQUEST' });
+      }
+      if (onStateChangeCallback) onStateChangeCallback();
+    }
+
+    async function connectWithConfig(rawConfig) {
+      try {
+        const cfg = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+        if (!cfg || !cfg.apiKey || !cfg.projectId) {
+          throw new Error('Invalid server config: missing apiKey or projectId.');
+        }
+
+        // Clean up any prior app instance if reconnecting with custom config
+        const existing = getApps();
+        for (const a of existing) {
+          await deleteApp(a).catch(() => {});
+        }
+
+        const app = initializeApp(cfg);
         db = getFirestore(app);
         auth = getAuth(app);
 
@@ -39,31 +129,127 @@
         }
 
         currentUser = auth.currentUser;
+        connectionMode = 'CLOUD';
+        initError = null;
+
         onAuthStateChanged(auth, (u) => {
-          if (u) currentUser = u;
+          if (u) {
+            currentUser = u;
+            if (onStateChangeCallback) onStateChangeCallback();
+          }
         });
+
+        if (onStateChangeCallback) onStateChangeCallback();
         return currentUser;
       } catch (err) {
-        initError = err?.message || 'Unable to reach multiplayer server.';
-        return null;
+        activateLocalMeshFallback(err?.message || 'Cloud server unreachable — Local Network Mesh active.');
+        return currentUser;
+      }
+    }
+
+    const readyPromise = (async () => {
+      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        return await connectWithConfig(__firebase_config);
+      } else {
+        activateLocalMeshFallback(null);
+        return currentUser;
       }
     })();
+
+    // Unified Firestore / Local Mesh API
+    const unifiedFn = {
+      doc: (colOrDb, ...segments) => {
+        if (connectionMode === 'CLOUD' && db) {
+          return doc(db, ...segments);
+        }
+        return { _meshCol: segments[segments.length - 2], _meshId: segments[segments.length - 1] };
+      },
+      getDoc: async (docRef) => {
+        if (connectionMode === 'CLOUD' && db && !docRef._meshCol) {
+          return await getDoc(docRef);
+        }
+        if (docRef._meshCol === 'profile') {
+          return { exists: () => Boolean(meshState.profile), data: () => meshState.profile };
+        }
+        const item = meshState[docRef._meshCol]?.get(docRef._meshId);
+        return { exists: () => Boolean(item), data: () => item };
+      },
+      setDoc: async (docRef, data, opts) => {
+        if (connectionMode === 'CLOUD' && db && !docRef._meshCol) {
+          return await setDoc(docRef, data, opts);
+        }
+        if (docRef._meshCol === 'profile') {
+          meshState.profile = opts?.merge ? { ...(meshState.profile || {}), ...data } : data;
+          return;
+        }
+        const col = docRef._meshCol;
+        const id = docRef._meshId;
+        const next = opts?.merge ? { ...(meshState[col]?.get(id) || {}), ...data } : data;
+        meshState[col]?.set(id, next);
+        notifyMesh(col);
+        if (meshChannel) meshChannel.postMessage({ type: 'SET_DOC', col, id, data: next });
+      },
+      updateDoc: async (docRef, data) => {
+        if (connectionMode === 'CLOUD' && db && !docRef._meshCol) {
+          return await updateDoc(docRef, data);
+        }
+        const col = docRef._meshCol;
+        const id = docRef._meshId;
+        const next = { ...(meshState[col]?.get(id) || {}), ...data };
+        meshState[col]?.set(id, next);
+        notifyMesh(col);
+        if (meshChannel) meshChannel.postMessage({ type: 'SET_DOC', col, id, data: next });
+      },
+      deleteDoc: async (docRef) => {
+        if (connectionMode === 'CLOUD' && db && !docRef._meshCol) {
+          return await deleteDoc(docRef);
+        }
+        const col = docRef._meshCol;
+        const id = docRef._meshId;
+        meshState[col]?.delete(id);
+        notifyMesh(col);
+        if (meshChannel) meshChannel.postMessage({ type: 'DEL_DOC', col, id });
+      },
+      addDoc: async (colRef, data) => {
+        if (connectionMode === 'CLOUD' && db && !colRef._meshCol) {
+          return await addDoc(colRef, data);
+        }
+        const col = colRef._meshCol;
+        const id = 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+        meshState[col]?.set(id, data);
+        notifyMesh(col);
+        if (meshChannel) meshChannel.postMessage({ type: 'SET_DOC', col, id, data });
+        return { id };
+      },
+      onSnapshot: (colRef, onNext, onErr) => {
+        if (connectionMode === 'CLOUD' && db && !colRef._meshCol) {
+          return onSnapshot(colRef, onNext, onErr);
+        }
+        const col = colRef._meshCol;
+        const listeners = meshListeners[col];
+        if (!listeners) return () => {};
+        listeners.add(onNext);
+        notifyMesh(col);
+        return () => listeners.delete(onNext);
+      }
+    };
 
     window.mpBridge = {
       appId,
       readyPromise,
+      connectWithConfig,
+      setOnStateChange: (cb) => { onStateChangeCallback = cb; },
+      getMode: () => connectionMode,
       getUser: () => currentUser,
       getError: () => initError,
       // Strict Rule 1 Paths:
-      // Public collections: /artifacts/{appId}/public/data/{collectionName}
-      lobbiesCol: () => (db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies') : null),
-      lobbyDoc: (id) => (db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies', id) : null),
-      playersCol: () => (db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_players') : null),
-      playerDoc: (id) => (db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_players', id) : null),
-      hitsCol: () => (db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_hits') : null),
-      // Private user profile: /artifacts/{appId}/users/{userId}/{collectionName}
-      userProfileDoc: (uid) => (db && uid ? doc(db, 'artifacts', appId, 'users', uid, 'profile', 'save_data') : null),
-      fn: { doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc }
+      lobbiesCol: () => (connectionMode === 'CLOUD' && db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies') : { _meshCol: 'lobbies' }),
+      lobbyDoc: (id) => (connectionMode === 'CLOUD' && db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies', id) : { _meshCol: 'lobbies', _meshId: id }),
+      playersCol: () => (connectionMode === 'CLOUD' && db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_players') : { _meshCol: 'players' }),
+      playerDoc: (id) => (connectionMode === 'CLOUD' && db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_players', id) : { _meshCol: 'players', _meshId: id }),
+      hitsCol: () => (connectionMode === 'CLOUD' && db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_hits') : { _meshCol: 'hits' }),
+      userProfileDoc: (uid) => (connectionMode === 'CLOUD' && db && uid ? doc(db, 'artifacts', appId, 'users', uid, 'profile', 'save_data') : { _meshCol: 'profile', _meshId: 'save_data' }),
+      fn: unifiedFn
     };
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -187,6 +373,24 @@
       opacity: 0;
       transition: opacity 0.2s ease-out;
     }
+    .title-menu-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    .title-menu-btn:hover {
+      transform: translateX(6px);
+    }
+    .title-menu-btn:active {
+      transform: translateX(2px) scale(0.99);
+    }
+    @keyframes titleGlowPulse {
+      0%, 100% { text-shadow: 0 0 28px rgba(245, 158, 11, 0.35), 0 4px 18px rgba(0, 0, 0, 0.65); }
+      50% { text-shadow: 0 0 46px rgba(251, 191, 36, 0.65), 0 4px 22px rgba(0, 0, 0, 0.75); }
+    }
+    .deadeye-hero-title {
+      animation: titleGlowPulse 3.6s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
@@ -246,7 +450,7 @@
             <button id="btn-open-settings" type="button" title="Graphics & Hardware Settings [O]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 transition cursor-pointer">&#9881; [O]</button>
             <button id="btn-quick-touch" type="button" title="Toggle On-Screen Mobile Buttons" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 transition cursor-pointer">TOUCH</button>
             <button id="btn-mute" type="button" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition cursor-pointer">SFX ON</button>
-            <button id="btn-open-modes" type="button" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition cursor-pointer">MODES</button>
+            <button id="btn-open-pause" type="button" title="Tactical Pause [P]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 transition cursor-pointer">&#10074;&#10074; [P]</button>
           </div>
           <!-- Live Multiplayer Kill Feed -->
           <div id="mp-killfeed" class="hidden mt-2 pt-2 border-t border-slate-700/75 flex flex-col items-end gap-1 text-[10px] font-mono-tech"></div>
@@ -311,6 +515,7 @@
           <span><span class="key-cap">SPACE</span> Slow-Mo</span>
           <span><span class="key-cap">B</span> Shop</span>
           <span><span class="key-cap">O</span> Graphics</span>
+          <span><span class="key-cap">P</span> Pause</span>
         </div>
 
         <!-- Bottom-Right: Slow-Mo Focus / Bullet Fuel -->
@@ -328,65 +533,138 @@
 
     <!-- Auto-Detected Mobile On-Screen Virtual Controls (z-[25] sits above HUD z-20 and below Modals z-30/40) -->
     <div id="mobile-controls-layer" class="hidden pointer-events-none fixed inset-0 z-[25]">
-      <!-- Left Side: Virtual Movement / Bullet Steering Thumbstick -->
-      <div id="mobile-joystick-zone" class="pointer-events-auto fixed bottom-32 sm:bottom-36 left-4 sm:left-7 w-32 h-32 flex items-center justify-center">
-        <div id="mobile-joystick-base" class="relative w-28 h-28 rounded-full flex items-center justify-center">
-          <div class="absolute inset-3 rounded-full border border-white/15"></div>
+      <!-- Left-Hand Virtual Thumbstick (Move on foot / Steer bullet) -->
+      <div id="mobile-joystick-zone" class="pointer-events-auto fixed bottom-6 left-5 w-32 h-32 flex flex-col items-center justify-center">
+        <div id="mobile-joystick-base" class="w-28 h-28 rounded-full flex items-center justify-center relative">
           <div id="mobile-joystick-nub" class="w-12 h-12 rounded-full pointer-events-none"></div>
-          <span id="mobile-joystick-label" class="absolute -top-5 font-mono-tech text-[9px] font-bold tracking-widest text-white/90 bg-slate-950/70 px-2 py-0.5 rounded">MOVE</span>
         </div>
+        <span id="mobile-joystick-label" class="font-mono-tech text-[10px] font-extrabold text-white/80 tracking-widest mt-1">MOVE</span>
       </div>
 
-      <!-- Right Side: Shooter Mode Touch Buttons -->
-      <div id="mobile-shooter-btns" class="pointer-events-auto fixed bottom-32 sm:bottom-36 right-4 sm:right-7 flex flex-col items-end gap-2.5">
+      <!-- Right-Hand Context Action Buttons: Shooter Mode -->
+      <div id="mobile-shooter-btns" class="pointer-events-auto fixed bottom-6 right-5 flex flex-col items-end gap-3">
         <div class="flex items-center gap-2.5">
-          <button type="button" id="mbtn-sprint" class="mobile-btn w-14 h-14 rounded-full bg-slate-900/85 border-2 border-slate-400/60 font-mono-tech text-[10px] font-extrabold text-slate-200 flex items-center justify-center shadow-lg">
+          <button id="mbtn-sprint" type="button" class="mobile-btn w-14 h-14 rounded-full bg-slate-900/80 border-2 border-slate-400/50 font-mono-tech text-[10px] font-extrabold text-slate-200 flex items-center justify-center shadow-lg">
             RUN
           </button>
-          <button type="button" id="mbtn-scope" class="mobile-btn w-14 h-14 rounded-full bg-sky-950/85 border-2 border-sky-400/75 font-mono-tech text-[10px] font-extrabold text-sky-300 flex items-center justify-center shadow-lg">
+          <button id="mbtn-scope" type="button" class="mobile-btn w-16 h-16 rounded-full bg-sky-500/25 border-2 border-sky-400/70 font-mono-tech text-[11px] font-extrabold text-sky-200 flex items-center justify-center shadow-lg">
             SCOPE
           </button>
         </div>
-        <button type="button" id="mbtn-fire" class="mobile-btn w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 border-2 border-white/85 font-mono-tech text-xs font-extrabold text-slate-950 flex items-center justify-center shadow-[0_8px_24px_rgba(234,88,12,0.6)]">
+        <button id="mbtn-fire" type="button" class="mobile-btn w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 border-2 border-white/85 font-mono-tech text-xs font-extrabold text-slate-950 flex items-center justify-center shadow-[0_8px_24px_rgba(245,158,11,0.65)]">
           FIRE
         </button>
       </div>
 
-      <!-- Right Side: Bullet Guidance Touch Buttons -->
-      <div id="mobile-bullet-btns" class="hidden pointer-events-auto fixed bottom-32 sm:bottom-36 right-4 sm:right-7 flex flex-col items-end gap-2.5">
+      <!-- Right-Hand Context Action Buttons: Guided Bullet Flight Mode -->
+      <div id="mobile-bullet-btns" class="hidden pointer-events-auto fixed bottom-6 right-5 flex flex-col items-end gap-3">
         <div class="flex items-center gap-2.5">
-          <button type="button" id="mbtn-detonate" class="mobile-btn w-14 h-14 rounded-full bg-rose-950/85 border-2 border-rose-400/75 font-mono-tech text-[9px] font-extrabold text-rose-300 flex items-center justify-center shadow-lg">
+          <button id="mbtn-detonate" type="button" class="mobile-btn w-14 h-14 rounded-full bg-rose-500/30 border-2 border-rose-400/70 font-mono-tech text-[10px] font-extrabold text-rose-200 flex items-center justify-center shadow-lg">
             ABORT
           </button>
-          <button type="button" id="mbtn-boost" class="mobile-btn w-14 h-14 rounded-full bg-amber-950/85 border-2 border-amber-400/80 font-mono-tech text-[10px] font-extrabold text-amber-300 flex items-center justify-center shadow-lg">
+          <button id="mbtn-boost" type="button" class="mobile-btn w-16 h-16 rounded-full bg-amber-500/30 border-2 border-amber-400/75 font-mono-tech text-[11px] font-extrabold text-amber-200 flex items-center justify-center shadow-lg">
             BOOST
           </button>
         </div>
-        <button type="button" id="mbtn-slowmo" class="mobile-btn w-20 h-20 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 border-2 border-white/85 font-mono-tech text-[11px] font-extrabold text-slate-950 flex items-center justify-center shadow-[0_8px_24px_rgba(56,189,248,0.6)]">
+        <button id="mbtn-slowmo" type="button" class="mobile-btn w-20 h-20 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 border-2 border-white/85 font-mono-tech text-[11px] font-extrabold text-slate-950 flex items-center justify-center shadow-[0_8px_24px_rgba(56,189,248,0.6)]">
           SLOW-MO
         </button>
       </div>
     </div>
 
-    <!-- Start / Game Mode Selection Overlay -->
-    <div id="start-screen" class="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4 bg-slate-950/45 backdrop-blur-sm overflow-y-auto">
+    <!-- Main Title Screen ("DEADEYE" + Play / Settings / Shop / Controls List) -->
+    <div id="title-screen" class="fixed inset-0 z-35 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-r from-slate-950/80 via-slate-950/45 to-transparent backdrop-blur-[2px]">
+      <div class="max-w-5xl w-full flex flex-col md:flex-row items-center md:items-end justify-between gap-8 my-auto">
+        <!-- Left Column: Hero Title & Vertical Menu List -->
+        <div class="w-full max-w-md text-left">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/80 border border-amber-400/40 mb-3">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span class="font-mono-tech text-[10px] font-extrabold tracking-[0.25em] text-amber-300 uppercase">GUIDED BALLISTICS EDITION</span>
+          </div>
+
+          <h1 class="deadeye-hero-title text-6xl sm:text-7xl md:text-8xl font-extrabold tracking-tighter text-white leading-none select-none">
+            DEAD<span class="text-amber-400">EYE</span>
+          </h1>
+          <p class="font-mono-tech text-xs sm:text-sm text-slate-200/90 tracking-widest uppercase mt-2 pl-1">
+            STEER EVERY SHOT &bull; MASTER EVERY WIND
+          </p>
+
+          <!-- Vertical Menu Button List: Play - Settings - Shop - Controls -->
+          <nav aria-label="Main Menu" class="flex flex-col gap-3 mt-7">
+            <button id="btn-title-play" type="button" class="title-menu-btn btn-primary w-full py-4 px-6 rounded-xl flex items-center justify-between font-mono-tech font-extrabold text-base sm:text-lg tracking-widest text-slate-950 uppercase cursor-pointer">
+              <span class="flex items-center gap-3">
+                <span class="text-xs px-2 py-0.5 rounded bg-slate-950/20 text-slate-950">01</span>
+                PLAY
+              </span>
+              <span>&rarr;</span>
+            </button>
+
+            <button id="btn-title-settings" type="button" class="title-menu-btn hud-card w-full py-3.5 px-6 rounded-xl flex items-center justify-between font-mono-tech font-extrabold text-sm sm:text-base tracking-widest text-white hover:border-sky-400/70 hover:bg-slate-900/95 uppercase cursor-pointer">
+              <span class="flex items-center gap-3">
+                <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">02</span>
+                SETTINGS
+              </span>
+              <span class="text-xs text-sky-300 font-bold">GRAPHICS &amp; AUDIO</span>
+            </button>
+
+            <button id="btn-title-shop" type="button" class="title-menu-btn hud-card w-full py-3.5 px-6 rounded-xl flex items-center justify-between font-mono-tech font-extrabold text-sm sm:text-base tracking-widest text-white hover:border-amber-400/70 hover:bg-slate-900/95 uppercase cursor-pointer">
+              <span class="flex items-center gap-3">
+                <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">03</span>
+                SHOP
+              </span>
+              <span class="text-xs text-amber-300 font-bold"><span id="title-credits-val">500</span> PTS</span>
+            </button>
+
+            <button id="btn-title-controls" type="button" class="title-menu-btn hud-card w-full py-3.5 px-6 rounded-xl flex items-center justify-between font-mono-tech font-extrabold text-sm sm:text-base tracking-widest text-white hover:border-emerald-400/70 hover:bg-slate-900/95 uppercase cursor-pointer">
+              <span class="flex items-center gap-3">
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">04</span>
+                CONTROLS
+              </span>
+              <span class="text-xs text-emerald-300 font-bold">FIELD MANUAL</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Right Column: Tactical Telemetry Badge -->
+        <div class="hidden md:flex flex-col items-end gap-2.5 text-right">
+          <div class="hud-card rounded-2xl p-4 border-white/20 max-w-xs">
+            <div class="font-mono-tech text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">BALLISTIC TELEMETRY</div>
+            <div class="text-sm font-bold text-white mt-1">3 Maps &bull; 4 Dynamic Seasons &bull; 4 Modes</div>
+            <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Fire your rifle to enter live bullet-camera flight. Curve rounds around cover, dilate time in Slow-Mo, and duel friends in password-protected lobbies.
+            </p>
+            <div class="flex items-center justify-end gap-2 mt-3 pt-2.5 border-t border-slate-700/80 font-mono-tech text-[10px] text-slate-400">
+              <span>VER 2.5 FINAL</span>
+              <span>&bull;</span>
+              <span class="text-emerald-300 font-bold">60 FPS ENGINE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deployment & Mission Mode Selection Overlay (Opened when clicking PLAY on Title Screen) -->
+    <div id="start-screen" class="hidden fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4 bg-slate-950/45 backdrop-blur-sm overflow-y-auto">
       <div class="hud-card rounded-2xl max-w-4xl w-full p-5 sm:p-7 border-white/25 relative overflow-hidden my-auto">
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-amber-400 to-orange-500"></div>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div class="font-mono-tech text-xs font-bold tracking-[0.22em] text-amber-400 uppercase">OPEN-VALLEY GUIDED BALLISTICS</div>
-            <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mt-0.5">DEADEYE // FIELD OPS</h1>
+            <div class="font-mono-tech text-xs font-bold tracking-[0.22em] text-amber-400 uppercase">MISSION BRIEFING &amp; DEPLOYMENT</div>
+            <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mt-0.5">DEADEYE // FIELD OPS</h2>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <div class="font-mono-tech text-xs font-bold px-3 py-2 rounded-xl bg-slate-900/90 border border-amber-400/40 text-amber-300">
               CREDITS: <span id="menu-credits-val" class="text-white">0</span> PTS
             </div>
             <button id="btn-menu-shop" type="button" class="font-mono-tech text-xs font-extrabold px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer">
-              ARMORY SHOP [B]
+              SHOP [B]
             </button>
             <button id="btn-menu-settings" type="button" class="font-mono-tech text-xs font-bold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-400/40 transition cursor-pointer">
               &#9881; SETTINGS [O]
+            </button>
+            <button id="btn-back-to-title" type="button" class="font-mono-tech text-xs font-bold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition cursor-pointer">
+              &larr; TITLE
             </button>
           </div>
         </div>
@@ -401,7 +679,7 @@
           <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/80">
             <div class="flex items-center justify-between mb-2">
               <span class="font-mono-tech text-[10px] font-extrabold tracking-widest text-sky-300 uppercase">1. SELECT OPERATION MAP</span>
-              <span id="menu-map-desc" class="font-mono-tech text-[10px] text-slate-400">ROLLING MEADOW</span>
+              <span id="menu-map-desc" class="font-mono-tech text-[10px] text-amber-300 font-bold">ROLLING MEADOW</span>
             </div>
             <div class="grid grid-cols-3 gap-2">
               <button type="button" data-map="CLASSIC" class="map-btn selected font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-amber-500 text-slate-950 border border-amber-300 cursor-pointer transition">
@@ -420,19 +698,19 @@
           <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/80">
             <div class="flex items-center justify-between mb-2">
               <span class="font-mono-tech text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase">2. SELECT SEASON</span>
-              <span id="menu-season-desc" class="font-mono-tech text-[10px] text-slate-400">LUSH DAYLIGHT</span>
+              <span id="menu-season-desc" class="font-mono-tech text-[10px] text-sky-300 font-bold">LUSH DAYLIGHT</span>
             </div>
             <div class="grid grid-cols-4 gap-1.5">
               <button type="button" data-season="SPRING" class="season-btn selected font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-emerald-500 text-slate-950 border border-emerald-300 cursor-pointer transition">
                 SPRING
               </button>
-              <button type="button" data-season="SUMMER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 cursor-pointer transition">
+              <button type="button" data-season="SUMMER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition">
                 SUMMER
               </button>
-              <button type="button" data-season="AUTUMN" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-300 border border-slate-600 cursor-pointer transition">
+              <button type="button" data-season="AUTUMN" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition">
                 AUTUMN
               </button>
-              <button type="button" data-season="WINTER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-600 cursor-pointer transition">
+              <button type="button" data-season="WINTER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition">
                 WINTER
               </button>
             </div>
@@ -524,10 +802,111 @@
 
         <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span class="font-mono-tech text-[11px] text-slate-400">
-            TIP: Walk over glowing green <span class="text-emerald-300 font-bold">AMMO CRATES</span> in the grass to restock rounds!
+            TIP: Walk over glowing green <span class="text-emerald-300 font-bold">AMMO CRATES</span> in the field to restock rounds!
           </span>
           <button id="btn-deploy" type="button" class="btn-primary w-full sm:w-auto py-3 px-8 rounded-xl font-mono-tech font-extrabold text-sm sm:text-base tracking-wider text-slate-950 uppercase cursor-pointer">
             DEPLOY: COMBAT OPS &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Field Manual & Controls Modal -->
+    <div id="controls-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
+      <div class="hud-card rounded-2xl max-w-3xl w-full p-5 sm:p-7 border-emerald-400/40 relative overflow-hidden my-auto max-h-[92vh] overflow-y-auto">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 via-sky-400 to-amber-400"></div>
+
+        <div class="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-slate-700/80">
+          <div>
+            <span class="font-mono-tech text-[11px] font-bold tracking-[0.2em] text-emerald-300 uppercase">OPERATOR TRAINING &amp; KEYBINDS</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">CONTROLS &amp; FIELD MANUAL</h2>
+          </div>
+          <button id="btn-close-controls" type="button" class="font-mono-tech text-xs font-extrabold px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 cursor-pointer">
+            CLOSE [ESC]
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+          <!-- On-Foot Shooter Controls -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4">
+            <div class="font-mono-tech text-xs font-extrabold text-amber-400 uppercase mb-3">01. ON-FOOT MARKSMAN</div>
+            <div class="space-y-2.5 text-slate-200">
+              <div class="flex items-center justify-between"><span>Move / Strafe</span><span><span class="key-cap">W</span> <span class="key-cap">A</span> <span class="key-cap">S</span> <span class="key-cap">D</span></span></div>
+              <div class="flex items-center justify-between"><span>Sprint</span><span><span class="key-cap">SHIFT</span></span></div>
+              <div class="flex items-center justify-between"><span>Aim Rifle</span><span><span class="key-cap">MOUSE</span> / <span class="key-cap">ARROWS</span></span></div>
+              <div class="flex items-center justify-between"><span>Sniper Scope Zoom</span><span><span class="key-cap">RMB</span> or <span class="key-cap">V</span></span></div>
+              <div class="flex items-center justify-between"><span>Fire Guided Round</span><span><span class="key-cap">LMB</span> or <span class="key-cap">F</span></span></div>
+            </div>
+          </div>
+
+          <!-- Guided Bullet Flight Controls -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4">
+            <div class="font-mono-tech text-xs font-extrabold text-sky-400 uppercase mb-3">02. GUIDED BULLET FLIGHT</div>
+            <div class="space-y-2.5 text-slate-200">
+              <div class="flex items-center justify-between"><span>Curve Trajectory</span><span><span class="key-cap">MOUSE</span> or <span class="key-cap">WASD</span></span></div>
+              <div class="flex items-center justify-between"><span>Slow-Mo Precision</span><span>Hold <span class="key-cap">SPACE</span></span></div>
+              <div class="flex items-center justify-between"><span>Thruster Overdrive</span><span>Hold <span class="key-cap">SHIFT</span></span></div>
+              <div class="flex items-center justify-between"><span>Early Detonate / Abort</span><span><span class="key-cap">F</span></span></div>
+              <div class="flex items-center justify-between"><span>Repeat Radio Clue</span><span><span class="key-cap">H</span></span></div>
+            </div>
+          </div>
+
+          <!-- Tactical Systems & Shortcuts -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4">
+            <div class="font-mono-tech text-xs font-extrabold text-emerald-400 uppercase mb-3">03. QUICK SHORTCUTS</div>
+            <div class="space-y-2.5 text-slate-200">
+              <div class="flex items-center justify-between"><span>Open Armory Shop</span><span><span class="key-cap">B</span></span></div>
+              <div class="flex items-center justify-between"><span>Graphics &amp; Settings</span><span><span class="key-cap">O</span></span></div>
+              <div class="flex items-center justify-between"><span>Tactical Pause Menu</span><span><span class="key-cap">P</span></span></div>
+              <div class="flex items-center justify-between"><span>Quick Restart / Respawn</span><span><span class="key-cap">R</span></span></div>
+            </div>
+          </div>
+
+          <!-- Mobile & Touch Controls -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4">
+            <div class="font-mono-tech text-xs font-extrabold text-rose-300 uppercase mb-3">04. MOBILE &amp; TOUCH</div>
+            <p class="text-slate-300 leading-relaxed">
+              On phones and tablets, virtual controls appear automatically:
+            </p>
+            <ul class="mt-2 space-y-1.5 text-slate-300 list-disc list-inside">
+              <li><strong class="text-white">Left Virtual Stick:</strong> Move on foot or steer bullet.</li>
+              <li><strong class="text-white">Right Screen Drag:</strong> Aim rifle or pitch/yaw bullet.</li>
+              <li><strong class="text-white">Action Buttons:</strong> Tap FIRE, SCOPE, RUN, or hold SLOW-MO &amp; BOOST.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tactical Pause Modal -->
+    <div id="pause-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+      <div class="hud-card rounded-2xl max-w-sm w-full p-6 text-center border-amber-400/40 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-sky-400 to-emerald-400"></div>
+        <div class="font-mono-tech text-[11px] font-bold tracking-[0.22em] text-amber-400 uppercase">OPERATION SUSPENDED</div>
+        <h2 class="text-3xl font-extrabold text-white mt-1">GAME PAUSED</h2>
+        <p id="pause-mission-info" class="font-mono-tech text-xs text-slate-300 mt-1.5">COMBAT OPS &bull; CLASSIC &bull; SPRING</p>
+
+        <div class="flex flex-col gap-2.5 mt-6">
+          <button id="btn-pause-resume" type="button" class="btn-primary w-full py-3 px-4 rounded-xl font-mono-tech font-extrabold text-xs sm:text-sm tracking-wider text-slate-950 uppercase cursor-pointer">
+            RESUME MISSION &rarr;
+          </button>
+          <button id="btn-pause-shop" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-extrabold text-xs tracking-wider bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-400/50 uppercase cursor-pointer">
+            ARMORY SHOP [B]
+          </button>
+          <button id="btn-pause-settings" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-bold text-xs tracking-wider bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-400/40 uppercase cursor-pointer">
+            SETTINGS [O]
+          </button>
+          <button id="btn-pause-controls" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-bold text-xs tracking-wider bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-400/40 uppercase cursor-pointer">
+            CONTROLS &amp; MANUAL
+          </button>
+          <button id="btn-pause-restart" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-bold text-xs tracking-wider bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 uppercase cursor-pointer">
+            RESTART MISSION [R]
+          </button>
+          <button id="btn-pause-modes" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-bold text-xs tracking-wider bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 uppercase cursor-pointer">
+            CHANGE MODE / MAP
+          </button>
+          <button id="btn-pause-title" type="button" class="w-full py-2.5 px-4 rounded-xl font-mono-tech font-bold text-xs tracking-wider bg-rose-950/60 hover:bg-rose-900/70 text-rose-300 border border-rose-500/40 uppercase cursor-pointer">
+            EXIT TO TITLE SCREEN
           </button>
         </div>
       </div>
@@ -549,18 +928,39 @@
           </button>
         </div>
 
-        <!-- Operator Identity Strip (Full User ID + Custom Callsign) -->
-        <div class="mt-4 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="flex-1">
-            <label for="mp-callsign-input" class="block font-mono-tech text-[10px] font-bold text-amber-300 mb-1">YOUR OPERATOR CALLSIGN</label>
-            <input id="mp-callsign-input" type="text" maxlength="18" placeholder="DEADEYE-01" class="w-full sm:max-w-xs bg-slate-950 border border-slate-600 focus:border-amber-400 rounded-lg px-3 py-1.5 font-mono-tech text-xs font-bold text-white outline-none" />
+        <!-- Operator Identity Strip (Full User ID + Custom Callsign + Connection Badge) -->
+        <div class="mt-4 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3.5 flex flex-col gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex-1">
+              <label for="mp-callsign-input" class="block font-mono-tech text-[10px] font-bold text-amber-300 mb-1">YOUR OPERATOR CALLSIGN</label>
+              <input id="mp-callsign-input" type="text" maxlength="18" placeholder="DEADEYE-01" class="w-full sm:max-w-xs bg-slate-950 border border-slate-600 focus:border-amber-400 rounded-lg px-3 py-1.5 font-mono-tech text-xs font-bold text-white outline-none" />
+            </div>
+            <div class="text-left sm:text-right">
+              <div class="flex items-center sm:justify-end gap-2">
+                <span id="mp-conn-badge" class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">ONLINE READY</span>
+                <button id="btn-toggle-server-cfg" type="button" class="font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 cursor-pointer">
+                  SERVER CONFIG
+                </button>
+              </div>
+              <div class="flex items-center sm:justify-end gap-2 mt-1.5">
+                <span id="mp-full-uid" class="font-mono-tech text-[11px] font-bold text-sky-300 break-all">CONNECTING...</span>
+                <button id="btn-copy-uid" type="button" class="font-mono-tech text-[10px] font-extrabold px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer shrink-0">
+                  COPY
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="text-left sm:text-right">
-            <div class="font-mono-tech text-[10px] text-slate-400">FULL OPERATOR ID (SHARE WITH SQUAD)</div>
-            <div class="flex items-center sm:justify-end gap-2 mt-1">
-              <span id="mp-full-uid" class="font-mono-tech text-[11px] font-bold text-sky-300 break-all">CONNECTING...</span>
-              <button id="btn-copy-uid" type="button" class="font-mono-tech text-[10px] font-extrabold px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer shrink-0">
-                COPY
+
+          <!-- Optional Cloud Server Config Panel (for connecting external devices across the internet) -->
+          <div id="mp-server-cfg-box" class="hidden pt-3 border-t border-slate-800">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="font-mono-tech text-[10px] font-bold text-sky-300">CLOUD SERVER CONFIG JSON (OPTIONAL FOR CROSS-DEVICE INTERNET PLAY)</span>
+              <span class="font-mono-tech text-[10px] text-slate-400">SAME-BROWSER MULTI-TAB WORKS AUTOMATICALLY</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input id="mp-server-cfg-input" type="text" placeholder='Paste {"apiKey":"...","authDomain":"...","projectId":"..."}' class="flex-1 bg-slate-950 border border-slate-600 focus:border-sky-400 rounded-lg px-3 py-1.5 font-mono-tech text-[11px] text-white outline-none" />
+              <button id="btn-connect-server-cfg" type="button" class="font-mono-tech text-[11px] font-extrabold px-4 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 cursor-pointer shrink-0">
+                CONNECT CLOUD
               </button>
             </div>
           </div>
@@ -721,6 +1121,9 @@
           </button>
           <button id="btn-result-modes" type="button" class="py-3 px-4 rounded-xl font-mono-tech font-bold text-xs sm:text-sm tracking-wider bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 uppercase cursor-pointer">
             MODES
+          </button>
+          <button id="btn-result-title" type="button" class="py-3 px-4 rounded-xl font-mono-tech font-bold text-xs sm:text-sm tracking-wider bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 uppercase cursor-pointer">
+            TITLE
           </button>
         </div>
       </div>
@@ -1306,8 +1709,8 @@
         this.selectedMode = 'COMBAT_OPS';
         this.activeMode = 'COMBAT_OPS';
 
-        // Game States: 'MENU' | 'SHOOTER_MODE' | 'BULLET_MODE' | 'IMPACT_WATCH' | 'MISSION_END'
-        this.state = 'MENU';
+        // Game States: 'TITLE' | 'MENU' | 'SHOOTER_MODE' | 'BULLET_MODE' | 'IMPACT_WATCH' | 'MISSION_END'
+        this.state = 'TITLE';
 
         // Mobile Detection & Virtual Touch Controls State
         this.isMobileDevice = this._detectMobileDevice();
@@ -1386,6 +1789,14 @@
         // Impact Watch Camera
         this.impactWatchTimer = 0;
         this.impactFocusPoint = new THREE.Vector3();
+
+        // Polish Juice: Hitmarker, Camera Shake, Muzzle Light & Floating 3D-to-2D Popups
+        this.hitmarkerTimer = 0;
+        this.hitmarkerHeadshot = false;
+        this.cameraShake = 0;
+        this.recoilPitchOffset = 0;
+        this.muzzleFlashTimer = 0;
+        this.floatingPopups = [];
 
         // Input Tracking
         this.keys = {};
@@ -1622,6 +2033,9 @@
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
         this.scene.add(ambientLight);
+
+        this.muzzlePointLight = new THREE.PointLight(0xffaa33, 0, 14);
+        this.scene.add(this.muzzlePointLight);
 
         this.sunLight = new THREE.DirectionalLight(0xfff9e6, 1.32);
         this.sunLight.position.set(85, 130, 75);
@@ -2918,9 +3332,11 @@
         const val = this.profile.credits.toLocaleString();
         const hudEl = document.getElementById('hud-credits');
         const menuEl = document.getElementById('menu-credits-val');
+        const titleEl = document.getElementById('title-credits-val');
         const shopEl = document.getElementById('shop-credits-balance');
         if (hudEl) hudEl.textContent = val;
         if (menuEl) menuEl.textContent = val;
+        if (titleEl) titleEl.textContent = val;
         if (shopEl) shopEl.textContent = `${val} PTS`;
       }
 
@@ -2932,6 +3348,8 @@
         this._exitPointerLockSafe();
         this._updateMobileControlsVisibility();
         document.getElementById('shop-modal').classList.add('hidden');
+        document.getElementById('controls-modal').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
         document.getElementById('settings-modal').classList.remove('hidden');
         this.syncSettingsUI();
       }
@@ -2943,6 +3361,68 @@
         if (!this.isMobileDevice && (this.stateBeforeModal === 'SHOOTER_MODE' || this.stateBeforeModal === 'BULLET_MODE')) {
           this._requestPointerLockSafe();
         }
+      }
+
+      openControlsModal() {
+        this.sound.init();
+        if (this.activeModal === 'CONTROLS') return;
+        if (!this.activeModal) this.stateBeforeModal = this.state;
+        this.activeModal = 'CONTROLS';
+        this._exitPointerLockSafe();
+        this._updateMobileControlsVisibility();
+        document.getElementById('shop-modal').classList.add('hidden');
+        document.getElementById('settings-modal').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
+        document.getElementById('controls-modal').classList.remove('hidden');
+      }
+
+      closeControlsModal() {
+        document.getElementById('controls-modal').classList.add('hidden');
+        this.activeModal = null;
+        this._updateMobileControlsVisibility();
+        if (!this.isMobileDevice && (this.stateBeforeModal === 'SHOOTER_MODE' || this.stateBeforeModal === 'BULLET_MODE')) {
+          this._requestPointerLockSafe();
+        }
+      }
+
+      openPauseMenu() {
+        if (this.state !== 'SHOOTER_MODE' && this.state !== 'BULLET_MODE' && this.state !== 'IMPACT_WATCH') return;
+        if (this.activeModal === 'PAUSE') return;
+        this.stateBeforeModal = this.state;
+        this.activeModal = 'PAUSE';
+        this._exitPointerLockSafe();
+        this._updateMobileControlsVisibility();
+        this.sound.updateBulletWind(false, 0, false, 0);
+        const infoEl = document.getElementById('pause-mission-info');
+        if (infoEl) {
+          infoEl.textContent = `${this.activeMode.replace('_', ' ')} • ${this.activeMap} • ${this.activeSeason}`;
+        }
+        document.getElementById('pause-modal').classList.remove('hidden');
+      }
+
+      closePauseMenu() {
+        document.getElementById('pause-modal').classList.add('hidden');
+        this.activeModal = null;
+        this._updateMobileControlsVisibility();
+        if (!this.isMobileDevice && (this.stateBeforeModal === 'SHOOTER_MODE' || this.stateBeforeModal === 'BULLET_MODE')) {
+          this._requestPointerLockSafe();
+        }
+      }
+
+      openTitleScreen() {
+        this._exitPointerLockSafe();
+        this._updateScopeUI(false);
+        this.sound.updateBulletWind(false, 0, false, 0);
+        this.activeModal = null;
+        this.state = 'TITLE';
+        this._updateMobileControlsVisibility();
+        this._refreshCreditsUI();
+        document.getElementById('hud-layer').classList.add('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
+        document.getElementById('mp-lobby-modal').classList.add('hidden');
+        document.getElementById('title-screen').classList.remove('hidden');
       }
 
       _clearDynamicEntities() {
@@ -2993,6 +3473,8 @@
         }
 
         document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('title-screen').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('mp-lobby-modal').classList.add('hidden');
         document.getElementById('hud-layer').classList.remove('hidden');
@@ -3085,11 +3567,30 @@
         this._exitPointerLockSafe();
         this._updateScopeUI(false);
         this.sound.updateBulletWind(false, 0, false, 0);
+        this.activeModal = null;
         this.state = 'MENU';
         this._updateMobileControlsVisibility();
+        this._refreshCreditsUI();
         document.getElementById('hud-layer').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('title-screen').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
         document.getElementById('start-screen').classList.remove('hidden');
+      }
+
+      _triggerHitFeedback(worldPos, labelText, colorHex = '#fbbf24', isHeadshot = false) {
+        this.hitmarkerTimer = isHeadshot ? 0.34 : 0.24;
+        this.hitmarkerHeadshot = isHeadshot;
+        this.cameraShake = Math.max(this.cameraShake, isHeadshot ? 0.28 : 0.16);
+        if (worldPos) {
+          this.floatingPopups.push({
+            pos: worldPos.clone().add(new THREE.Vector3(0, 0.35, 0)),
+            text: labelText,
+            color: colorHex,
+            life: 1.15,
+            maxLife: 1.15
+          });
+        }
       }
 
       _finishMission(isVictory, badgeText, titleText, descText) {
@@ -3572,7 +4073,7 @@
         }
 
         // 5. Mode-specific updates (Enemy AI, Crowd Civilians, Radio Timer, Summer Dehydration, Multiplayer Sync)
-        if (this.state !== 'MENU' && this.state !== 'MISSION_END') {
+        if (this.activeModal !== 'PAUSE' && this.state !== 'TITLE' && this.state !== 'MENU' && this.state !== 'MISSION_END') {
           if (this.activeSeason === 'SUMMER') {
             this._updateSummerDehydration(dt);
           }
@@ -3592,8 +4093,27 @@
           }
         }
 
+        // Decay Hitmarker, Recoil, Muzzle Flash, Camera Shake & Floating Popups
+        if (this.hitmarkerTimer > 0) this.hitmarkerTimer = Math.max(0, this.hitmarkerTimer - dt);
+        if (this.cameraShake > 0) this.cameraShake = Math.max(0, this.cameraShake - dt * 1.4);
+        if (this.recoilPitchOffset > 0) this.recoilPitchOffset = Math.max(0, this.recoilPitchOffset - dt * 0.45);
+        if (this.muzzleFlashTimer > 0) {
+          this.muzzleFlashTimer = Math.max(0, this.muzzleFlashTimer - dt);
+          this.muzzlePointLight.intensity = (this.muzzleFlashTimer / 0.1) * 3.8;
+        } else {
+          this.muzzlePointLight.intensity = 0;
+        }
+        for (let i = this.floatingPopups.length - 1; i >= 0; i--) {
+          const fp = this.floatingPopups[i];
+          fp.life -= dt;
+          fp.pos.y += 1.35 * dt;
+          if (fp.life <= 0) this.floatingPopups.splice(i, 1);
+        }
+
         // 6. State Machine Camera & Control Updates
-        if (this.state === 'MENU') {
+        if (this.activeModal === 'PAUSE') {
+          this.sound.updateBulletWind(false, 0, false, dt);
+        } else if (this.state === 'TITLE' || this.state === 'MENU') {
           const orbitAngle = this.worldTime * 0.16;
           this.camera.position.set(Math.sin(orbitAngle) * 32, 15, Math.cos(orbitAngle) * 32 + 6);
           const lookDir = new THREE.Vector3(-this.camera.position.x, -9, 4 - this.camera.position.z).normalize();
@@ -3704,8 +4224,12 @@
         }
 
         this.camera.rotation.y = this.shooterYaw;
-        this.camera.rotation.x = this.shooterPitch - (this.isScoped ? 0 : 0.045);
+        this.camera.rotation.x = this.shooterPitch + this.recoilPitchOffset - (this.isScoped ? 0 : 0.045);
         this.camera.rotation.z = 0;
+        if (this.cameraShake > 0) {
+          this.camera.position.x += (Math.random() - 0.5) * this.cameraShake * 0.25;
+          this.camera.position.y += (Math.random() - 0.5) * this.cameraShake * 0.25;
+        }
 
         this.playerGroup.updateMatrixWorld(true);
         const muzzleWorld = new THREE.Vector3();
@@ -4004,6 +4528,7 @@
         if (this.state === 'MISSION_END') return;
         this.playerHP = Math.max(0, this.playerHP - amount);
         this.timeSinceLastHit = 0;
+        this.cameraShake = Math.max(this.cameraShake, 0.35);
         this.sound.playPlayerHurt();
 
         const vig = document.getElementById('damage-vignette');
@@ -4179,6 +4704,10 @@
         this.bulletTrailCore.visible = true;
 
         this._spawnSparks(muzzleWorld, 0xfbbf24, 14, 9);
+        this.muzzlePointLight.position.copy(muzzleWorld);
+        this.muzzleFlashTimer = 0.1;
+        this.recoilPitchOffset = 0.055;
+        this.cameraShake = Math.max(this.cameraShake, 0.18);
 
         this.state = 'BULLET_MODE';
         this._updateMobileControlsVisibility();
@@ -4269,6 +4798,10 @@
         this.camera.rotation.y = this.bulletYaw;
         this.camera.rotation.x = this.bulletPitch - 0.05;
         this.camera.rotation.z = (this.targetBulletYaw - this.bulletYaw) * -0.45;
+        if (this.cameraShake > 0) {
+          this.camera.position.x += (Math.random() - 0.5) * this.cameraShake * 0.2;
+          this.camera.position.y += (Math.random() - 0.5) * this.cameraShake * 0.2;
+        }
 
         const targetFov = this.isBulletBoost ? 78 : this.isBulletSlowMo ? 54 : 66;
         this.currentFov += (targetFov - this.currentFov) * (1 - Math.exp(-12 * dt));
@@ -4349,6 +4882,12 @@
             if (isHeadshot) this.headshots += 1;
             this.sound.playHit(isHeadshot);
             const pts = this._awardCredits(isHeadshot ? 850 : 500);
+            this._triggerHitFeedback(
+              this.bulletPos,
+              isHeadshot ? `HEADSHOT +${pts}` : `+${pts} PTS`,
+              isHeadshot ? '#fbbf24' : '#f87171',
+              isHeadshot
+            );
             this._triggerCallout(
               isHeadshot ? 'HEADSHOT ELIMINATION!' : 'HOSTILE NEUTRALIZED',
               `+${pts.toLocaleString()} CREDITS`,
@@ -4409,6 +4948,12 @@
               if (isHeadshot) this.headshots += 1;
               this.sound.playHit(isHeadshot);
               this._spawnSparks(this.bulletPos, isHeadshot ? 0xfbbf24 : 0x38bdf8, 24, 14);
+              this._triggerHitFeedback(
+                this.bulletPos,
+                isHeadshot ? `HEADSHOT -${dmg}` : `-${dmg} HP`,
+                isHeadshot ? '#fbbf24' : '#38bdf8',
+                isHeadshot
+              );
               this._sendMultiplayerHit(uid, dmg, isHeadshot);
 
               if (rp.hp - dmg <= 0) {
@@ -4469,6 +5014,7 @@
         if (civ.isTarget) {
           this.sound.playHit(true);
           const bonus = this._awardCredits(isHeadshot ? 3500 : 2500);
+          this._triggerHitFeedback(this.bulletPos, `TARGET DOWN +${bonus}`, '#34d399', true);
           this._updateHUD();
           setTimeout(() => {
             this._finishMission(
@@ -4481,6 +5027,7 @@
         } else {
           this.sound.playPenaltyBuzz();
           this.score = Math.max(0, this.score - 500);
+          this._triggerHitFeedback(this.bulletPos, 'CIVILIAN -500', '#ef4444', false);
           this._updateHUD();
           this._triggerCallout(
             'INNOCENT CIVILIAN HIT!',
@@ -4499,6 +5046,7 @@
         if (anim.species === 'HARE') {
           this.sound.playPenaltyBuzz();
           this.score = Math.max(0, this.score - 400);
+          this._triggerHitFeedback(this.bulletPos, 'PROTECTED -400', '#ef4444', false);
           this._updateHUD();
           this._triggerCallout(
             'PROTECTED HARE HARMED!',
@@ -4510,6 +5058,7 @@
 
         this.sound.playHit(false);
         const pts = this._awardCredits(600);
+        this._triggerHitFeedback(this.bulletPos, `+${pts} PTS`, '#fbbf24', false);
         if (this.activeMode === 'WILDLIFE_HUNT') {
           if (this.huntQuota[anim.species] > 0) {
             this.huntQuota[anim.species] -= 1;
@@ -4788,9 +5337,124 @@
         const h = this.hudCanvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        if (this.state === 'MENU' || this.state === 'MISSION_END') return;
+        if (this.state === 'TITLE' || this.state === 'MENU' || this.state === 'MISSION_END') return;
         const cx = w / 2;
         const cy = h / 2;
+
+        // 1. Floating 3D-to-2D Impact & Score Popups
+        for (let i = 0; i < this.floatingPopups.length; i++) {
+          const fp = this.floatingPopups[i];
+          const proj = fp.pos.clone().project(this.camera);
+          if (proj.z < 1) {
+            const sx = (proj.x * 0.5 + 0.5) * w;
+            const sy = (-proj.y * 0.5 + 0.5) * h;
+            const alpha = Math.max(0, Math.min(1, fp.life / (fp.maxLife * 0.45)));
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.font = '800 14px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#0f172a';
+            ctx.fillText(fp.text, sx + 1.5, sy + 1.5);
+            ctx.fillStyle = fp.color;
+            ctx.fillText(fp.text, sx, sy);
+            ctx.restore();
+          }
+        }
+
+        // 2. Crisp Diagonal Hitmarker Crosshair on Impact
+        if (this.hitmarkerTimer > 0) {
+          const hmAlpha = Math.min(1, this.hitmarkerTimer / 0.16);
+          ctx.save();
+          ctx.globalAlpha = hmAlpha;
+          ctx.strokeStyle = this.hitmarkerHeadshot ? '#fbbf24' : '#ef4444';
+          ctx.lineWidth = this.hitmarkerHeadshot ? 3.2 : 2.5;
+          const inner = 8;
+          const outer = 20;
+          [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([dx, dy]) => {
+            ctx.beginPath();
+            ctx.moveTo(cx + dx * inner, cy + dy * inner);
+            ctx.lineTo(cx + dx * outer, cy + dy * outer);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+
+        // 3. Tactical Mini-Radar & Compass (Desktop & Tablet Top-Center)
+        if (w >= 640) {
+          const rSize = 44;
+          const rx = cx;
+          const ry = 58;
+          const radarRange = 55;
+          ctx.save();
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.42)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.18)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(rx, ry, rSize * 0.5, 0, Math.PI * 2);
+          ctx.moveTo(rx - rSize, ry);
+          ctx.lineTo(rx + rSize, ry);
+          ctx.moveTo(rx, ry - rSize);
+          ctx.lineTo(rx, ry + rSize);
+          ctx.stroke();
+
+          const refPos = this.state === 'BULLET_MODE' ? this.bulletPos : this.playerPos;
+          const refYaw = this.state === 'BULLET_MODE' ? this.bulletYaw : this.shooterYaw;
+          const cosY = Math.cos(refYaw);
+          const sinY = Math.sin(refYaw);
+
+          const plotBlip = (wx, wz, color, rad = 3) => {
+            const dx = wx - refPos.x;
+            const dz = wz - refPos.z;
+            const lx = dx * cosY - dz * sinY;
+            const lz = dx * sinY + dz * cosY;
+            const dist = Math.hypot(lx, lz);
+            const clamped = Math.min(dist, radarRange) / radarRange;
+            const ang = Math.atan2(lz, lx);
+            const bx = rx + Math.cos(ang) * clamped * (rSize - 5);
+            const by = ry + Math.sin(ang) * clamped * (rSize - 5);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(bx, by, rad, 0, Math.PI * 2);
+            ctx.fill();
+          };
+
+          // Ammo crates (green)
+          this.ammoPickups.forEach((c) => {
+            if (c.active) plotBlip(c.x, c.z, '#34d399', 2.2);
+          });
+
+          // Mode contacts
+          if (this.activeMode === 'COMBAT_OPS') {
+            this.enemySoldiers.forEach((e) => {
+              if (e.alive) plotBlip(e.root.position.x, e.root.position.z, '#ef4444', 3.2);
+            });
+          } else if (this.activeMode === 'WILDLIFE_HUNT') {
+            this.animals.forEach((a) => {
+              if (a.alive && a.species !== 'HARE') plotBlip(a.root.position.x, a.root.position.z, '#f59e0b', 3.0);
+            });
+          } else if (this.activeMode === 'MULTIPLAYER') {
+            this.mpRemotePlayers.forEach((rp) => {
+              if (rp.alive) plotBlip(rp.root.position.x, rp.root.position.z, '#38bdf8', 3.4);
+            });
+          }
+
+          // Center player arrow
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(rx, ry - 5);
+          ctx.lineTo(rx - 3.5, ry + 4);
+          ctx.lineTo(rx + 3.5, ry + 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
 
         if (this.state === 'SHOOTER_MODE') {
           if (this.isScoped) {
@@ -4938,6 +5602,43 @@
       }
 
       _bindEvents() {
+        // Title Screen Vertical Button List Wire-Up (Play - Settings - Shop - Controls)
+        document.getElementById('btn-title-play').addEventListener('click', () => {
+          this.sound.init();
+          this.openModeSelection();
+        });
+        document.getElementById('btn-title-settings').addEventListener('click', () => this.openSettings());
+        document.getElementById('btn-title-shop').addEventListener('click', () => this.openShop());
+        document.getElementById('btn-title-controls').addEventListener('click', () => this.openControlsModal());
+        document.getElementById('btn-back-to-title').addEventListener('click', () => this.openTitleScreen());
+
+        // Controls Modal & Tactical Pause Menu Wire-Up
+        document.getElementById('btn-close-controls').addEventListener('click', () => this.closeControlsModal());
+        document.getElementById('btn-open-pause').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openPauseMenu();
+        });
+        document.getElementById('btn-pause-resume').addEventListener('click', () => this.closePauseMenu());
+        document.getElementById('btn-pause-shop').addEventListener('click', () => this.openShop());
+        document.getElementById('btn-pause-settings').addEventListener('click', () => this.openSettings());
+        document.getElementById('btn-pause-controls').addEventListener('click', () => this.openControlsModal());
+        document.getElementById('btn-pause-restart').addEventListener('click', () => {
+          this.closePauseMenu();
+          if (this.activeMode === 'MULTIPLAYER' && this.mpCurrentLobby) {
+            this._respawnMultiplayerPlayer();
+          } else {
+            this.startMode(this.activeMode);
+          }
+        });
+        document.getElementById('btn-pause-modes').addEventListener('click', () => {
+          this._leaveMultiplayerLobby();
+          this.openModeSelection();
+        });
+        document.getElementById('btn-pause-title').addEventListener('click', () => {
+          this._leaveMultiplayerLobby();
+          this.openTitleScreen();
+        });
+
         const mapBtns = document.querySelectorAll('.map-btn');
         const mapDescs = {
           CLASSIC: 'ROLLING MEADOW',
@@ -5005,11 +5706,14 @@
             this.startMode(this.selectedMode);
           }
         });
-        document.getElementById('btn-open-modes').addEventListener('click', (e) => {
-          e.stopPropagation();
-          this._leaveMultiplayerLobby();
-          this.openModeSelection();
-        });
+        const openModesBtn = document.getElementById('btn-open-modes');
+        if (openModesBtn) {
+          openModesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._leaveMultiplayerLobby();
+            this.openModeSelection();
+          });
+        }
         document.getElementById('btn-next-clue').addEventListener('click', (e) => {
           e.stopPropagation();
           this._broadcastRadioClue(this.crowdClueIndex + 1);
@@ -5025,6 +5729,10 @@
         document.getElementById('btn-result-modes').addEventListener('click', () => {
           this._leaveMultiplayerLobby();
           this.openModeSelection();
+        });
+        document.getElementById('btn-result-title').addEventListener('click', () => {
+          this._leaveMultiplayerLobby();
+          this.openTitleScreen();
         });
         document.getElementById('btn-mute').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -5079,6 +5787,10 @@
         document.getElementById('mp-join-pass-input').addEventListener('keydown', (e) => {
           if (e.key === 'Enter') this.confirmJoinLockedLobby();
         });
+        document.getElementById('btn-toggle-server-cfg').addEventListener('click', () => {
+          document.getElementById('mp-server-cfg-box').classList.toggle('hidden');
+        });
+        document.getElementById('btn-connect-server-cfg').addEventListener('click', () => this.connectCustomCloudConfig());
 
         // Shop Modal Wire-Up
         document.getElementById('btn-open-shop').addEventListener('click', (e) => {
@@ -5254,8 +5966,27 @@
               this.closeSettings();
               return;
             }
+            if (this.activeModal === 'CONTROLS') {
+              this.closeControlsModal();
+              return;
+            }
+            if (this.activeModal === 'PAUSE') {
+              this.closePauseMenu();
+              return;
+            }
             if (this.activeModal === 'MULTIPLAYER') {
               this.closeMultiplayerModal();
+              return;
+            }
+          }
+
+          if (e.code === 'KeyP' && !e.repeat) {
+            if (this.activeModal === 'PAUSE') {
+              this.closePauseMenu();
+              return;
+            }
+            if (!this.activeModal && (this.state === 'SHOOTER_MODE' || this.state === 'BULLET_MODE' || this.state === 'IMPACT_WATCH')) {
+              this.openPauseMenu();
               return;
             }
           }
@@ -5439,33 +6170,19 @@
       // -----------------------------------------------------------------------
       // MULTIPLAYER LOBBIES, PASSWORD GATE & REAL-TIME PVP SYNC
       // -----------------------------------------------------------------------
-      async _initMultiplayerBridge() {
+      _attachMultiplayerListeners() {
         const bridge = window.mpBridge;
-        const uidEl = document.getElementById('mp-full-uid');
-        const callsignInp = document.getElementById('mp-callsign-input');
-        if (callsignInp && !callsignInp.value) {
-          callsignInp.value = this.mpCallsign;
+        if (!bridge) return;
+
+        if (this.mpUnsubLobbies) {
+          this.mpUnsubLobbies();
+          this.mpUnsubLobbies = null;
+        }
+        if (this.mpUnsubPlayers) {
+          this.mpUnsubPlayers();
+          this.mpUnsubPlayers = null;
         }
 
-        if (!bridge) {
-          if (uidEl) uidEl.textContent = 'OFFLINE';
-          return;
-        }
-
-        const user = await bridge.readyPromise;
-        if (!user) {
-          if (uidEl) uidEl.textContent = bridge.getError() || 'UNAVAILABLE';
-          this._renderMultiplayerLobbies();
-          return;
-        }
-
-        this.mpUser = user;
-        if (uidEl) uidEl.textContent = user.uid;
-
-        // Load saved profile & settings from Firestore user path
-        await this._loadProfileFromCloud();
-
-        // Subscribe to public lobbies & players collections (Rule 2: simple collection queries, filter in JS)
         const { onSnapshot } = bridge.fn;
         const lobbiesCol = bridge.lobbiesCol();
         const playersCol = bridge.playersCol();
@@ -5513,6 +6230,85 @@
             () => {}
           );
         }
+      }
+
+      _updateMpConnectionBadge() {
+        const bridge = window.mpBridge;
+        const badge = document.getElementById('mp-conn-badge');
+        const uidEl = document.getElementById('mp-full-uid');
+        if (!bridge) return;
+
+        const mode = bridge.getMode();
+        const user = bridge.getUser();
+        this.mpUser = user;
+
+        if (uidEl && user) {
+          uidEl.textContent = user.uid;
+        }
+
+        if (badge) {
+          if (mode === 'CLOUD') {
+            badge.textContent = 'CLOUD SERVER CONNECTED';
+            badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+          } else if (mode === 'LOCAL_MESH') {
+            badge.textContent = 'LIVE MULTI-TAB MESH READY';
+            badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40';
+          } else {
+            badge.textContent = 'CONNECTING...';
+            badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40';
+          }
+        }
+      }
+
+      async connectCustomCloudConfig() {
+        const bridge = window.mpBridge;
+        const raw = document.getElementById('mp-server-cfg-input')?.value.trim();
+        if (!bridge || !raw) {
+          this._setMpStatus('Paste a valid JSON server config object first.', 'rose');
+          return;
+        }
+        this._setMpStatus('Connecting to cloud multiplayer server...', 'sky');
+        await bridge.connectWithConfig(raw);
+        this._updateMpConnectionBadge();
+        this._attachMultiplayerListeners();
+        if (bridge.getMode() === 'CLOUD') {
+          this._setMpStatus('Connected to Cloud Server! Cross-device multiplayer is now active.', 'emerald');
+          document.getElementById('mp-server-cfg-box').classList.add('hidden');
+          await this._loadProfileFromCloud();
+        } else {
+          this._setMpStatus(bridge.getError() || 'Could not verify cloud config; using Local Multi-Tab Mesh.', 'rose');
+        }
+        this._renderMultiplayerLobbies();
+      }
+
+      async _initMultiplayerBridge() {
+        const bridge = window.mpBridge;
+        const uidEl = document.getElementById('mp-full-uid');
+        const callsignInp = document.getElementById('mp-callsign-input');
+        if (callsignInp && !callsignInp.value) {
+          callsignInp.value = this.mpCallsign;
+        }
+
+        if (!bridge) {
+          if (uidEl) uidEl.textContent = 'OFFLINE';
+          return;
+        }
+
+        bridge.setOnStateChange(() => {
+          this._updateMpConnectionBadge();
+          this._renderMultiplayerLobbies();
+        });
+
+        const user = await bridge.readyPromise;
+        this.mpUser = user;
+        this._updateMpConnectionBadge();
+
+        // Load saved profile & settings
+        await this._loadProfileFromCloud();
+
+        // Subscribe to lobbies & players collections
+        this._attachMultiplayerListeners();
+        this._renderMultiplayerLobbies();
 
         window.addEventListener('beforeunload', () => {
           this._leaveMultiplayerLobby();
