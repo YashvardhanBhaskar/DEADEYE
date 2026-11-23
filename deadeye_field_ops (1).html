@@ -215,6 +215,16 @@
             <span id="hud-quota-label" class="text-slate-300">REMAINING</span>
             <div id="hud-quota-display" class="flex items-center gap-1.5 font-extrabold text-white"></div>
           </div>
+          <!-- Summer Season Hydration / Dehydration Countdown -->
+          <div id="hud-hydration-box" class="hidden mt-1.5 pt-1.5 border-t border-amber-500/40">
+            <div class="flex items-center justify-between text-[10px] font-mono-tech">
+              <span class="text-amber-300 font-extrabold">&#9728; HYDRATION TIMER</span>
+              <span id="hud-hydration-time" class="text-white font-extrabold">03:00</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1 border border-slate-700">
+              <div id="hud-hydration-bar" class="h-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-150" style="width: 100%"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Top-Right: Credits, Score, Headshots, Shop, Settings & Mode Switch -->
@@ -382,25 +392,69 @@
         </div>
 
         <p class="text-slate-200 text-xs sm:text-sm mt-2 leading-relaxed">
-          Roam a sunlit grass meadow dotted with trees, boulders, scattered ammo crates, and wildlife. Fire your rifle to take direct control of the slow, steerable bullet mid-flight—and spend earned points in the Armory Shop!
+          Choose your map, season, and mission mode. Fire your rifle to take direct control of the slow, steerable bullet mid-flight—and spend earned points in the Armory Shop!
         </p>
 
+        <!-- Map & Season Selectors -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3.5">
+          <!-- Map Selector -->
+          <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/80">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono-tech text-[10px] font-extrabold tracking-widest text-sky-300 uppercase">1. SELECT OPERATION MAP</span>
+              <span id="menu-map-desc" class="font-mono-tech text-[10px] text-slate-400">ROLLING MEADOW</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" data-map="CLASSIC" class="map-btn selected font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-amber-500 text-slate-950 border border-amber-300 cursor-pointer transition">
+                CLASSIC
+              </button>
+              <button type="button" data-map="TOWN" class="map-btn font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition">
+                TOWN
+              </button>
+              <button type="button" data-map="CITY" class="map-btn font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition">
+                CITY
+              </button>
+            </div>
+          </div>
+
+          <!-- Season Selector -->
+          <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/80">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono-tech text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase">2. SELECT SEASON</span>
+              <span id="menu-season-desc" class="font-mono-tech text-[10px] text-slate-400">LUSH DAYLIGHT</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button type="button" data-season="SPRING" class="season-btn selected font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-emerald-500 text-slate-950 border border-emerald-300 cursor-pointer transition">
+                SPRING
+              </button>
+              <button type="button" data-season="SUMMER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 cursor-pointer transition">
+                SUMMER
+              </button>
+              <button type="button" data-season="AUTUMN" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-300 border border-slate-600 cursor-pointer transition">
+                AUTUMN
+              </button>
+              <button type="button" data-season="WINTER" class="season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-600 cursor-pointer transition">
+                WINTER
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 4 Selectable Game Mode Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3.5">
           <!-- Mode 1: Combat Ops -->
           <button type="button" data-mode="COMBAT_OPS" class="mode-card selected text-left rounded-xl p-3.5 bg-slate-900/85 border-2 border-slate-700 cursor-pointer flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between">
                 <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-400/40">MODE 01</span>
-                <span class="font-mono-tech text-[10px] text-amber-400 font-bold">ACTION</span>
+                <span class="font-mono-tech text-[10px] text-rose-300 font-bold">3 WAVES</span>
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">COMBAT OPS</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Battle waves of armed enemy soldiers who take cover behind boulders and fire tracer rounds back.
+                Engage armed enemy squads that strafe, take cover, and return tracer fire across the map.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-rose-300 mt-3 pt-2 border-t border-slate-700/70">
-              3 WAVES &bull; AI COVER FIRE
+              ARMED HOSTILES &bull; HP REGEN
             </div>
           </button>
 
@@ -409,15 +463,15 @@
             <div>
               <div class="flex items-center justify-between">
                 <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">MODE 02</span>
-                <span class="font-mono-tech text-[10px] text-amber-400 font-bold">MARKSMAN</span>
+                <span class="font-mono-tech text-[10px] text-amber-300 font-bold">QUOTA HUNT</span>
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">WILDLIFE HUNT</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Track and hunt designated Stag Deer and Wild Boars across the valley while sparing protected Hares.
+                Track and harvest 3 Stags and 3 Wild Boars roaming the terrain. Do not harm protected hares!
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-amber-300 mt-3 pt-2 border-t border-slate-700/70">
-              STAG &amp; BOAR QUOTA
+              3 STAGS + 3 BOARS
             </div>
           </button>
 
@@ -426,11 +480,11 @@
             <div>
               <div class="flex items-center justify-between">
                 <span class="font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">MODE 03</span>
-                <span class="font-mono-tech text-[10px] text-emerald-300 font-bold">STEALTH</span>
+                <span class="font-mono-tech text-[10px] text-emerald-300 font-bold">OVERWATCH</span>
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">CROWD SNIPER</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Eliminate one target inside a moving crowd of 24 people using ONLY Tactical Radio outfit &amp; zone clues.
+                Locked on your sniper perch, identify and eliminate 1 target in a crowd of 24 using tactical radio clues only.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-emerald-300 mt-3 pt-2 border-t border-slate-700/70">
@@ -557,6 +611,35 @@
                     <option value="5">5 KILLS</option>
                     <option value="10" selected>10 KILLS</option>
                     <option value="15">15 KILLS</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2 mt-3">
+                <div>
+                  <label for="mp-create-map" class="block font-mono-tech text-[10px] font-bold text-sky-300 mb-1">MAP</label>
+                  <select id="mp-create-map" class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-2 font-mono-tech text-[11px] text-white outline-none">
+                    <option value="CLASSIC" selected>CLASSIC</option>
+                    <option value="TOWN">TOWN</option>
+                    <option value="CITY">CITY</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="mp-create-season" class="block font-mono-tech text-[10px] font-bold text-emerald-300 mb-1">SEASON</label>
+                  <select id="mp-create-season" class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-2 font-mono-tech text-[11px] text-white outline-none">
+                    <option value="SPRING" selected>SPRING</option>
+                    <option value="SUMMER">SUMMER</option>
+                    <option value="AUTUMN">AUTUMN</option>
+                    <option value="WINTER">WINTER</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="mp-create-summer-time" class="block font-mono-tech text-[10px] font-bold text-amber-300 mb-1">SUMMER TIMER</label>
+                  <select id="mp-create-summer-time" class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-2 font-mono-tech text-[11px] text-white outline-none">
+                    <option value="90">1:30 (90S)</option>
+                    <option value="120">2:00 (120S)</option>
+                    <option value="180" selected>3:00 (180S)</option>
+                    <option value="300">5:00 (300S)</option>
                   </select>
                 </div>
               </div>
@@ -840,19 +923,34 @@
 
   <script>
     // =========================================================================
-    // 1. SHARED TERRAIN HEIGHT FUNCTION (Rolling Sunlit Grass Valley)
+    // 1. SHARED TERRAIN HEIGHT FUNCTION (Classic Grassland, Town & City)
     // =========================================================================
+    let ACTIVE_TERRAIN_MAP = 'CLASSIC';
+
     function smoothstep(edge0, edge1, x) {
       const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
       return t * t * (3 - 2 * t);
     }
 
-    function terrainHeight(x, z) {
+    function terrainHeight(x, z, mapOverride = null) {
+      const mapId = mapOverride || ACTIVE_TERRAIN_MAP;
       const dist = Math.hypot(x, z);
+      const rim = smoothstep(58, 132, dist) * 12.0;
+
+      if (mapId === 'CITY') {
+        // Paved urban downtown grid is level inside the city perimeter
+        return rim * 0.65;
+      }
+      if (mapId === 'TOWN') {
+        // Gentle village slopes with a flattened central square & tower hill
+        const sqFlatten = smoothstep(14, 34, dist);
+        const gentle = (Math.sin(x * 0.028) * Math.cos(z * 0.028) * 0.85) * sqFlatten;
+        return gentle + rim * 0.85;
+      }
+      // CLASSIC: Rolling sunlit grassland valley
       const centerFlatten = smoothstep(10, 32, dist);
       const h1 = Math.sin(x * 0.032) * Math.cos(z * 0.032) * 1.45;
       const h2 = Math.sin(x * 0.085 + z * 0.065) * 0.42;
-      const rim = smoothstep(56, 130, dist) * 12.0;
       return (h1 + h2) * centerFlatten + rim;
     }
 
@@ -862,358 +960,323 @@
     class SoundFX {
       constructor() {
         this.ctx = null;
-        this.muted = false;
-        this.masterVolume = 0.8;
         this.masterGain = null;
         this.windGain = null;
         this.windFilter = null;
-        this.windOsc = null;
+        this.muted = false;
+        this.volume = 0.8;
       }
 
       init() {
         if (this.ctx) {
-          if (this.ctx.state === 'suspended') this.ctx.resume();
+          if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
           return;
         }
         try {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (!AudioCtx) return;
           this.ctx = new AudioCtx();
-
           this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.value = this.muted ? 0 : this.masterVolume;
+          this.masterGain.gain.value = this.muted ? 0 : this.volume;
           this.masterGain.connect(this.ctx.destination);
 
-          // Continuous aerodynamic hum during bullet flight
-          this.windOsc = this.ctx.createOscillator();
-          this.windOsc.type = 'sawtooth';
-          this.windOsc.frequency.value = 92;
+          // Continuous aerodynamic whistle for guided bullet flight
+          const bufferSize = this.ctx.sampleRate * 2;
+          const noiseBuf = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = noiseBuf.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = noiseBuf;
+          noise.loop = true;
 
           this.windFilter = this.ctx.createBiquadFilter();
-          this.windFilter.type = 'lowpass';
-          this.windFilter.frequency.value = 280;
+          this.windFilter.type = 'bandpass';
+          this.windFilter.frequency.value = 520;
+          this.windFilter.Q.value = 3.2;
 
           this.windGain = this.ctx.createGain();
-          this.windGain.gain.value = 0.0001;
+          this.windGain.gain.value = 0;
 
-          this.windOsc.connect(this.windFilter);
+          noise.connect(this.windFilter);
           this.windFilter.connect(this.windGain);
           this.windGain.connect(this.masterGain);
-          this.windOsc.start();
-        } catch (e) {
-          this.ctx = null;
-        }
+          noise.start();
+        } catch (e) {}
       }
 
-      setMasterVolume(vol0to1) {
-        this.masterVolume = Math.max(0, Math.min(1, vol0to1));
+      setMasterVolume(v) {
+        this.volume = Math.max(0, Math.min(1, v));
         if (this.masterGain && this.ctx) {
-          this.masterGain.gain.setTargetAtTime(this.muted ? 0 : this.masterVolume, this.ctx.currentTime, 0.04);
+          this.masterGain.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.03);
         }
       }
 
-      updateBulletWind(active, speedRatio = 0.5, isSlowMo = false, dt = 0.016) {
-        if (!this.ctx || !this.windGain || this.muted) {
-          if (this.windGain && this.ctx) {
-            this.windGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05);
-          }
-          return;
-        }
-        const now = this.ctx.currentTime;
-        if (!active) {
-          this.windGain.gain.setTargetAtTime(0.0001, now, 0.06);
-          return;
-        }
-        const targetGain = isSlowMo ? 0.055 : 0.045 + speedRatio * 0.045;
-        const targetFreq = isSlowMo ? 66 : 95 + speedRatio * 75;
-        const filterCutoff = isSlowMo ? 170 : 320 + speedRatio * 480;
-        this.windGain.gain.setTargetAtTime(targetGain, now, Math.max(0.02, dt));
-        this.windOsc.frequency.setTargetAtTime(targetFreq, now, Math.max(0.02, dt));
-        this.windFilter.frequency.setTargetAtTime(filterCutoff, now, Math.max(0.02, dt));
+      _tone(freq, endFreq, dur, type = 'sine', gainVal = 0.25, delay = 0) {
+        if (!this.ctx || this.muted) return;
+        const now = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + dur);
+        g.gain.setValueAtTime(gainVal, now);
+        g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+        osc.connect(g);
+        g.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + dur + 0.01);
       }
 
       playRifleShot() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-
-        // Punchy sub-bass thump
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(165, now);
-        osc.frequency.exponentialRampToValueAtTime(34, now + 0.24);
-        gain.gain.setValueAtTime(0.45, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.27);
-
-        // Filtered noise crack
-        const bufSize = Math.floor(this.ctx.sampleRate * 0.28);
-        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.22));
-        }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buf;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1400, now);
-        filter.Q.value = 0.85;
-
-        const nGain = this.ctx.createGain();
-        nGain.gain.setValueAtTime(0.48, now);
-        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
-
-        noise.connect(filter);
-        filter.connect(nGain);
-        nGain.connect(this.masterGain);
-        noise.start(now);
+        this._tone(190, 38, 0.28, 'sawtooth', 0.42);
+        this._tone(920, 110, 0.14, 'triangle', 0.3);
       }
 
       playEnemyShot() {
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(240, now);
-        osc.frequency.exponentialRampToValueAtTime(55, now + 0.14);
-        gain.gain.setValueAtTime(0.14, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.16);
+        this._tone(240, 65, 0.16, 'square', 0.16);
       }
 
       playPlayerHurt() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(115, now);
-        osc.frequency.linearRampToValueAtTime(52, now + 0.22);
-        gain.gain.setValueAtTime(0.32, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.25);
+        this._tone(130, 48, 0.25, 'sawtooth', 0.35);
       }
 
-      playTargetEliminated(isHeadshot = false) {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const notes = isHeadshot ? [523.25, 659.25, 1046.5] : [392.0, 523.25];
-        notes.forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.055);
-          gain.gain.setValueAtTime(0.24, now + idx * 0.055);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.28);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now + idx * 0.055);
-          osc.stop(now + idx * 0.055 + 0.3);
-        });
-      }
-
-      playSurfaceImpact() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(42, now + 0.16);
-        gain.gain.setValueAtTime(0.22, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.18);
-      }
-
-      playAmmoPickup() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        [440, 660].forEach((freq, i) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + i * 0.06);
-          gain.gain.setValueAtTime(0.18, now + i * 0.06);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.18);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now + i * 0.06);
-          osc.stop(now + i * 0.06 + 0.2);
-        });
-      }
-
-      playRadioChirp() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        [980, 1280].forEach((freq, i) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + i * 0.045);
-          gain.gain.setValueAtTime(0.11, now + i * 0.045);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.045 + 0.08);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now + i * 0.045);
-          osc.stop(now + i * 0.045 + 0.09);
-        });
+      playHit(isHeadshot = false) {
+        if (isHeadshot) {
+          this._tone(1180, 1760, 0.12, 'sine', 0.35);
+          this._tone(1560, 2100, 0.18, 'triangle', 0.28, 0.06);
+        } else {
+          this._tone(520, 220, 0.14, 'triangle', 0.3);
+        }
       }
 
       playPenaltyBuzz() {
-        this.init();
-        if (!this.ctx || this.muted) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(110, now);
-        osc.frequency.linearRampToValueAtTime(72, now + 0.36);
-        gain.gain.setValueAtTime(0.26, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.4);
+        this._tone(150, 95, 0.32, 'sawtooth', 0.32);
+      }
+
+      playAmmoPickup() {
+        this._tone(520, 780, 0.1, 'sine', 0.22);
+        this._tone(780, 1040, 0.14, 'sine', 0.22, 0.08);
+      }
+
+      playRadioChirp() {
+        this._tone(1350, 1480, 0.06, 'sine', 0.16);
+        this._tone(1120, 1240, 0.08, 'sine', 0.14, 0.07);
       }
 
       playPurchase() {
-        this.init();
-        if (!this.ctx || this.muted) return;
+        this._tone(660, 990, 0.11, 'triangle', 0.25);
+        this._tone(990, 1320, 0.16, 'sine', 0.25, 0.09);
+      }
+
+      updateBulletWind(active, speedRatio, isSlowMo, dt) {
+        if (!this.ctx || !this.windGain || !this.windFilter) return;
         const now = this.ctx.currentTime;
-        [587.33, 880, 1174.66].forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.05);
-          gain.gain.setValueAtTime(0.2, now + idx * 0.05);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.22);
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-          osc.start(now + idx * 0.05);
-          osc.stop(now + idx * 0.05 + 0.24);
-        });
+        if (!active || this.muted) {
+          this.windGain.gain.setTargetAtTime(0, now, 0.06);
+          return;
+        }
+        const targetGain = isSlowMo ? 0.07 : 0.13 + speedRatio * 0.07;
+        const targetFreq = isSlowMo ? 260 : 440 + speedRatio * 420;
+        this.windGain.gain.setTargetAtTime(targetGain, now, 0.05);
+        this.windFilter.frequency.setTargetAtTime(targetFreq, now, 0.05);
       }
     }
 
     // =========================================================================
-    // 3. SHOP CATALOG & CROWD SNIPER TRAITS
+    // 3. SHOP UPGRADES, SPECIAL AMMO & CROWD SNIPER TRAIT TABLES
     // =========================================================================
     const SHOP_UPGRADES = [
       {
         id: 'finAgility',
-        name: 'GUIDED FIN AGILITY',
-        tag: 'STEERING',
-        desc: 'Enhances micro-stabilizer fins for sharper mid-air turns around cover.',
+        tag: 'AERODYNAMICS',
+        name: 'Guided Fin Actuators',
+        desc: 'Increases mid-air bullet pitch & yaw turning responsiveness for tight curves around cover.',
         maxLevel: 5,
-        costs: [0, 800, 1800, 3200, 5000],
-        statLabel: (lv) => `+${(lv - 1) * 20}% Turn Speed`
+        costs: [0, 600, 1200, 2200, 3500],
+        statLabel: (lv) => `${(1.0 + (lv - 1) * 0.22).toFixed(2)}x Turn Rate`
       },
       {
         id: 'focusCap',
-        name: 'FOCUS CAPACITOR',
-        tag: 'SLOW-MO & FUEL',
-        desc: 'Extends Slow-Mo Focus duration, bullet fuel tank, and recharge speed.',
+        tag: 'NEURAL OPTIC',
+        name: 'Focus Capacitor',
+        desc: 'Expands Slow-Mo Focus reserve, bullet flight fuel duration, and recharge rate.',
         maxLevel: 5,
-        costs: [0, 900, 2000, 3500, 5500],
-        statLabel: (lv) => `${(4.5 + (lv - 1) * 1.1).toFixed(1)}s Focus / ${(7.5 + (lv - 1) * 1.3).toFixed(1)}s Fuel`
+        costs: [0, 650, 1300, 2300, 3600],
+        statLabel: (lv) => `+${(lv - 1) * 25}% Flight & Slow-Mo Fuel`
       },
       {
         id: 'propellant',
-        name: 'PROPELLANT THRUSTER',
-        tag: 'VELOCITY',
-        desc: 'Increases guided cruise velocity and Shift-Boost acceleration.',
+        tag: 'BALLISTICS',
+        name: 'Micro-Thruster Core',
+        desc: 'Boosts guided projectile cruise velocity and Shift overdrive thrust.',
         maxLevel: 5,
-        costs: [0, 850, 1900, 3400, 5200],
-        statLabel: (lv) => `${(14 + (lv - 1) * 2.5).toFixed(1)} m/s Cruise`
+        costs: [0, 700, 1400, 2400, 3800],
+        statLabel: (lv) => `${(14.0 + (lv - 1) * 2.2).toFixed(1)} m/s Cruise`
       },
       {
         id: 'optics',
-        name: 'BALLISTIC OPTICS',
-        tag: 'SCOPE & LASER',
-        desc: 'Upgrades sniper scope magnification and extends rangefinder laser.',
+        tag: 'TARGETING',
+        name: 'Variable Ballistic Scope',
+        desc: 'Upgrades sniper optic magnification and extends laser rangefinder distance.',
         maxLevel: 5,
-        costs: [0, 750, 1600, 2900, 4600],
-        statLabel: (lv) => `${(2.7 + (lv - 1) * 0.75).toFixed(1)}x Zoom • ${45 + (lv - 1) * 18}m Laser`
+        costs: [0, 550, 1100, 1900, 3000],
+        statLabel: (lv) => `${(65 / Math.max(11, 24 - (lv - 1) * 3.2)).toFixed(1)}x Zoom • ${55 + (lv - 1) * 18}m Laser`
       },
       {
         id: 'armorAmmo',
-        name: 'KEVLAR & AMMO BELT',
         tag: 'SURVIVABILITY',
-        desc: 'Boosts maximum armor HP and increases guided round capacity.',
+        name: 'Kevlar Plate & Ammo Belt',
+        desc: 'Increases maximum operator armor HP and carried guided round capacity.',
         maxLevel: 5,
-        costs: [0, 1000, 2200, 3800, 6000],
-        statLabel: (lv) => `${100 + (lv - 1) * 25} HP • ${6 + (lv - 1)} Rounds`
+        costs: [0, 750, 1500, 2600, 4000],
+        statLabel: (lv) => `${100 + (lv - 1) * 25} Max HP • ${6 + (lv - 1)} Rounds`
       }
     ];
 
     const SHOP_AMMO_TYPES = [
       {
         id: 'STANDARD',
-        name: 'STANDARD FMJ',
-        cost: 0,
         badge: 'DEFAULT',
-        desc: 'Precision brass-jacketed guided round with balanced aerodynamics.'
+        name: 'Standard FMJ',
+        cost: 0,
+        desc: 'Balanced copper-jacketed guided round with crisp aerodynamic stability.'
       },
       {
         id: 'GOLD_TRACER',
-        name: 'GOLDEN TRACER',
-        cost: 2200,
         badge: '+25% CREDITS',
-        desc: 'High-visibility gold wake trail. Earns +25% bonus Credits & Score on every hit.'
+        name: 'Golden Tracer Round',
+        cost: 1500,
+        desc: 'Leaves a luminous gold wake and awards +25% bonus Credits & Score on every elimination.'
       },
       {
         id: 'SHOCKWAVE',
-        name: 'SHOCKWAVE ROUND',
-        cost: 3600,
-        badge: 'AOE BLAST',
-        desc: 'Detonates a 3.4m kinetic shockwave on impact, staggering or eliminating nearby hostiles.'
+        badge: '3.4M BLAST AOE',
+        name: 'Shockwave Warhead',
+        cost: 2800,
+        desc: 'Detonates a 3.4m kinetic shockwave on impact, eliminating nearby hostiles around cover.'
       }
     ];
 
     const CROWD_HATS = [
-      { id: 'RED_CAP', label: 'Crimson Cap', color: 0xdc2626 },
-      { id: 'GOLD_HAT', label: 'Gold Sunhat', color: 0xeab308 },
-      { id: 'BLUE_BEANIE', label: 'Cobalt Beanie', color: 0x2563eb },
-      { id: 'WHITE_FEDORA', label: 'White Fedora', color: 0xf8fafc },
+      { id: 'RED_CAP', label: 'Crimson Ballcap', color: 0xdc2626 },
+      { id: 'BLUE_CAP', label: 'Cobalt Cap', color: 0x2563eb },
+      { id: 'GOLD_HAT', label: 'Gold Sun Hat', color: 0xeab308 },
+      { id: 'WHITE_FEDORA', label: 'Ivory Fedora', color: 0xf8fafc },
       { id: 'NONE', label: 'No Hat', color: null }
     ];
 
     const CROWD_JACKETS = [
-      { id: 'CRIMSON', label: 'Crimson Jacket', color: 0xb91c1c },
-      { id: 'EMERALD', label: 'Emerald Coat', color: 0x047857 },
-      { id: 'COBALT', label: 'Cobalt Blazer', color: 0x1d4ed8 },
+      { id: 'RED', label: 'Scarlet Jacket', color: 0xb91c1c },
+      { id: 'BLUE', label: 'Navy Coat', color: 0x1d4ed8 },
+      { id: 'EMERALD', label: 'Emerald Parka', color: 0x047857 },
       { id: 'AMBER', label: 'Amber Vest', color: 0xd97706 },
-      { id: 'VIOLET', label: 'Violet Parka', color: 0x6d28d9 },
-      { id: 'CHARCOAL', label: 'Charcoal Suit', color: 0x334155 }
+      { id: 'VIOLET', label: 'Violet Blazer', color: 0x6d28d9 }
     ];
 
-    const CROWD_ZONES = [
-      { id: 'FOUNTAIN', label: 'Central Stone Fountain', x: 0, z: 4, radius: 13 },
-      { id: 'WEST_GROVE', label: 'West Birch Grove', x: -24, z: 6, radius: 14 },
-      { id: 'EAST_BOULDERS', label: 'East Boulder Ridge', x: 24, z: 4, radius: 14 },
-      { id: 'NORTH_CLEARING', label: 'North Meadow Clearing', x: 0, z: -22, radius: 15 }
-    ];
+    const CROWD_ZONES_BY_MAP = {
+      CLASSIC: [
+        { id: 'FOUNTAIN', label: 'Central Stone Fountain', x: 0, z: 4, radius: 13 },
+        { id: 'WEST_GROVE', label: 'West Birch Grove', x: -24, z: 6, radius: 14 },
+        { id: 'EAST_BOULDERS', label: 'East Boulder Ridge', x: 24, z: 4, radius: 14 },
+        { id: 'NORTH_CLEARING', label: 'North Meadow Clearing', x: 0, z: -22, radius: 15 }
+      ],
+      TOWN: [
+        { id: 'MARKET_SQUARE', label: 'Cobblestone Market Square', x: 0, z: 2, radius: 13 },
+        { id: 'WEST_COTTAGES', label: 'West Timber Cottages', x: -23, z: 4, radius: 13 },
+        { id: 'EAST_BLACKSMITH', label: 'East Blacksmith Yard', x: 23, z: 2, radius: 13 },
+        { id: 'NORTH_CHAPEL', label: 'North Chapel Green', x: 0, z: -23, radius: 14 }
+      ],
+      CITY: [
+        { id: 'METRO_PLAZA', label: 'Metro Central Plaza', x: 0, z: 2, radius: 13 },
+        { id: 'WEST_AVENUE', label: 'West Financial Avenue', x: -22, z: 2, radius: 13 },
+        { id: 'EAST_TRANSIT', label: 'East Transit Block', x: 22, z: 2, radius: 13 },
+        { id: 'NORTH_PARK', label: 'North Civic Park', x: 0, z: -22, radius: 14 }
+      ]
+    };
+
+    const SEASON_CONFIGS = {
+      SPRING: {
+        label: 'SPRING',
+        desc: 'LUSH DAYLIGHT',
+        skyBg: 0x87ceeb,
+        fogColor: 0xd8effd,
+        horizon: 0xe6f5ff,
+        mid: 0x7cc4fa,
+        zenith: 0x2f7ed8,
+        sunColor: 0xfff9e6,
+        sunIntensity: 1.32,
+        grassA: 0x5ea33b,
+        grassB: 0x4a8c2e,
+        path: 0xb6a478,
+        bladeHsl: [0.25, 0.56, 0.42],
+        leafA: 0x3b7a2a,
+        leafB: 0x4c9436,
+        roofTint: 0x9a3412,
+        snowCap: false,
+        weatherType: 'NONE'
+      },
+      SUMMER: {
+        label: 'SUMMER',
+        desc: '3-MIN DEHYDRATION TIMER',
+        skyBg: 0x6ec6ff,
+        fogColor: 0xfff3d1,
+        horizon: 0xfff3c4,
+        mid: 0x5bb8f5,
+        zenith: 0x1d6fd1,
+        sunColor: 0xfff0b3,
+        sunIntensity: 1.52,
+        grassA: 0x76a832,
+        grassB: 0x8fb339,
+        path: 0xd6be8a,
+        bladeHsl: [0.21, 0.58, 0.44],
+        leafA: 0x4d8c2a,
+        leafB: 0x65a332,
+        roofTint: 0xb45309,
+        snowCap: false,
+        weatherType: 'NONE'
+      },
+      AUTUMN: {
+        label: 'AUTUMN',
+        desc: 'FALLING ORANGE LEAVES',
+        skyBg: 0xe8a86b,
+        fogColor: 0xf7cfa4,
+        horizon: 0xfde2c4,
+        mid: 0xe59866,
+        zenith: 0x5c7699,
+        sunColor: 0xffd29d,
+        sunIntensity: 1.28,
+        grassA: 0xb87a28,
+        grassB: 0x9c5a1e,
+        path: 0x9c8265,
+        bladeHsl: [0.09, 0.66, 0.43],
+        leafA: 0xea580c,
+        leafB: 0xf59e0b,
+        roofTint: 0x7c2d12,
+        snowCap: false,
+        weatherType: 'LEAVES'
+      },
+      WINTER: {
+        label: 'WINTER',
+        desc: 'SNOW-COVERED WORLD',
+        skyBg: 0xcbd5e1,
+        fogColor: 0xe2e8f0,
+        horizon: 0xf1f5f9,
+        mid: 0xcbd5e1,
+        zenith: 0x64748b,
+        sunColor: 0xf8fafc,
+        sunIntensity: 1.15,
+        grassA: 0xf1f5f9,
+        grassB: 0xe2e8f0,
+        path: 0xcbd5e1,
+        bladeHsl: [0.58, 0.25, 0.88],
+        leafA: 0xe2e8f0,
+        leafB: 0xf8fafc,
+        roofTint: 0xf8fafc,
+        snowCap: true,
+        weatherType: 'SNOW'
+      }
+    };
 
     // =========================================================================
     // 4. MAIN GAME ENGINE: DEADEYE // FIELD OPS
@@ -1228,6 +1291,16 @@
         // Persistent Profile & Settings (In-memory + Firestore user cloud sync; zero localStorage)
         this.profile = this._defaultProfile();
         this.settings = this._defaultSettings();
+
+        // Map & Season Selection ('CLASSIC' | 'TOWN' | 'CITY', 'SPRING' | 'SUMMER' | 'AUTUMN' | 'WINTER')
+        this.selectedMap = 'CLASSIC';
+        this.activeMap = 'CLASSIC';
+        this.selectedSeason = 'SPRING';
+        this.activeSeason = 'SPRING';
+
+        // Summer Dehydration Timer (180s default, customizable in Multiplayer)
+        this.hydrationMax = 180;
+        this.hydrationRemaining = 180;
 
         // Game Modes: 'COMBAT_OPS' | 'WILDLIFE_HUNT' | 'CROWD_SNIPER' | 'MULTIPLAYER'
         this.selectedMode = 'COMBAT_OPS';
@@ -1329,9 +1402,12 @@
         // Entity Collections
         this.treeColliders = [];
         this.boulderColliders = [];
+        this.boxColliders = [];
         this.clouds = [];
         this.grassMesh = null;
         this.grassData = [];
+        this.weatherParticles = null;
+        this.weatherData = [];
         this.ammoPickups = [];
         this.animals = [];
         this.enemySoldiers = [];
@@ -1418,14 +1494,22 @@
         }
 
         layer.classList.remove('hidden');
+        const joyZone = document.getElementById('mobile-joystick-zone');
         if (this.state === 'BULLET_MODE') {
           shooterBtns.classList.add('hidden');
           bulletBtns.classList.remove('hidden');
+          if (joyZone) joyZone.style.opacity = '1';
           if (joyLabel) joyLabel.textContent = 'STEER';
         } else {
           bulletBtns.classList.add('hidden');
           shooterBtns.classList.remove('hidden');
-          if (joyLabel) joyLabel.textContent = 'MOVE';
+          if (this.activeMode === 'CROWD_SNIPER') {
+            if (joyZone) joyZone.style.opacity = '0.35';
+            if (joyLabel) joyLabel.textContent = 'SNIPER LOCKED';
+          } else {
+            if (joyZone) joyZone.style.opacity = '1';
+            if (joyLabel) joyLabel.textContent = 'MOVE';
+          }
         }
       }
 
@@ -1447,21 +1531,22 @@
         };
       }
 
-      async _saveProfileToCloud() {
-        const bridge = window.mpBridge;
-        if (!bridge || !this.mpUser) return;
-        try {
-          const { setDoc } = bridge.fn;
-          const docRef = bridge.userProfileDoc(this.mpUser.uid);
-          if (docRef) {
-            await setDoc(docRef, {
-              profile: this.profile,
-              settings: this.settings,
-              callsign: this.mpCallsign,
-              updatedAt: Date.now()
-            });
-          }
-        } catch (e) {}
+      _defaultSettings() {
+        const isMobile = this._detectMobileDevice();
+        return {
+          preset: isMobile ? 'LOW' : 'HIGH',
+          resolutionScale: isMobile ? '0.75' : 'NATIVE',
+          shadows: isMobile ? 'OFF' : 'HIGH',
+          grassDensity: isMobile ? 0.25 : 1,
+          viewDistance: isMobile ? 260 : 620,
+          particles: isMobile ? 'MINIMAL' : 'FULL',
+          showFps: true,
+          invertY: false,
+          touchControls: 'AUTO',
+          aimSens: 1.0,
+          bulletSens: 1.0,
+          masterVolume: 0.8
+        };
       }
 
       async _loadProfileFromCloud() {
@@ -1475,16 +1560,11 @@
           if (snap.exists()) {
             const data = snap.data();
             if (data.profile) {
-              const defP = this._defaultProfile();
-              this.profile = {
-                credits: typeof data.profile.credits === 'number' ? data.profile.credits : defP.credits,
-                upgrades: Object.assign({}, defP.upgrades, data.profile.upgrades || {}),
-                unlockedAmmo: Array.isArray(data.profile.unlockedAmmo) ? data.profile.unlockedAmmo : defP.unlockedAmmo,
-                equippedAmmo: data.profile.equippedAmmo || defP.equippedAmmo
-              };
+              this.profile = Object.assign(this._defaultProfile(), data.profile);
+              this.profile.upgrades = Object.assign(this._defaultProfile().upgrades, data.profile.upgrades || {});
             }
             if (data.settings) {
-              this.settings = Object.assign({}, this._defaultSettings(), data.settings);
+              this.settings = Object.assign(this._defaultSettings(), data.settings);
             }
             if (data.callsign) {
               this.mpCallsign = data.callsign;
@@ -1500,85 +1580,32 @@
         } catch (e) {}
       }
 
-      _defaultSettings() {
-        const isMobile = this._detectMobileDevice();
-        return {
-          preset: isMobile ? 'MEDIUM' : 'HIGH',
-          resolutionScale: isMobile ? '1.0' : 'NATIVE',
-          shadows: isMobile ? 'LOW' : 'HIGH',
-          grassDensity: isMobile ? 0.5 : 1,
-          viewDistance: isMobile ? 360 : 620,
-          particles: 'FULL',
-          showFps: true,
-          aimSens: isMobile ? 1.25 : 1.0,
-          bulletSens: isMobile ? 1.2 : 1.0,
-          invertY: false,
-          masterVolume: 0.8,
-          touchControls: 'AUTO'
-        };
+      async _saveProfileToCloud() {
+        const bridge = window.mpBridge;
+        if (!bridge || !this.mpUser) return;
+        try {
+          const { setDoc } = bridge.fn;
+          const docRef = bridge.userProfileDoc(this.mpUser.uid);
+          if (!docRef) return;
+          await setDoc(
+            docRef,
+            {
+              profile: this.profile,
+              settings: this.settings,
+              callsign: this.mpCallsign,
+              updatedAt: Date.now()
+            },
+            { merge: true }
+          );
+        } catch (e) {}
       }
 
-      _getComputedStats() {
-        const u = this.profile.upgrades;
-        return {
-          turnMultiplier: 1 + (u.finAgility - 1) * 0.2,
-          focusDuration: 4.5 + (u.focusCap - 1) * 1.1,
-          focusRecharge: 18 + (u.focusCap - 1) * 4.5,
-          fuelDuration: 7.5 + (u.focusCap - 1) * 1.3,
-          cruiseSpeed: 14.0 + (u.propellant - 1) * 2.5,
-          boostSpeed: 23.0 + (u.propellant - 1) * 3.5,
-          scopeFov: Math.max(11, 24 - (u.optics - 1) * 3.2),
-          laserRange: 45 + (u.optics - 1) * 18,
-          maxHP: 100 + (u.armorAmmo - 1) * 25,
-          maxAmmo: 6 + (u.armorAmmo - 1)
-        };
-      }
-
-      _applyUpgradeStats(refillVitals = false) {
-        const stats = this._getComputedStats();
-        this.playerMaxHP = stats.maxHP;
-        this.maxAmmo = stats.maxAmmo;
-        if (refillVitals) {
-          this.playerHP = this.playerMaxHP;
-          this.ammoRemaining = this.maxAmmo;
-          this.focusEnergy = 100;
-        } else {
-          this.playerHP = Math.min(this.playerMaxHP, this.playerHP);
-          this.ammoRemaining = Math.min(this.maxAmmo, this.ammoRemaining);
-        }
-        this._updateAmmoMaterial();
-        this._updateHUD();
-      }
-
-      _awardCredits(baseAmount) {
-        const mult = this.profile.equippedAmmo === 'GOLD_TRACER' ? 1.25 : 1.0;
-        const earned = Math.round(baseAmount * mult);
-        this.score += earned;
-        this.profile.credits += earned;
-        this._saveProfileToCloud();
-        this._refreshCreditsUI();
-        return earned;
-      }
-
-      _refreshCreditsUI() {
-        const fmt = this.profile.credits.toLocaleString();
-        const hudEl = document.getElementById('hud-credits');
-        const menuEl = document.getElementById('menu-credits-val');
-        const shopEl = document.getElementById('shop-credits-balance');
-        if (hudEl) hudEl.textContent = fmt;
-        if (menuEl) menuEl.textContent = fmt;
-        if (shopEl) shopEl.textContent = `${fmt} PTS`;
-      }
-
-      // -----------------------------------------------------------------------
-      // 3D SCENE, SUNLIT SKY & RENDERER SETUP
-      // -----------------------------------------------------------------------
       _initThree() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x87ceeb);
-        this.scene.fog = new THREE.Fog(0xd8effd, 150, 620);
+        this.scene.fog = new THREE.Fog(0xd8effd, 155, 620);
 
-        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.25, 950);
+        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.15, 940);
         this.camera.rotation.order = 'YXZ';
 
         this.renderer = new THREE.WebGLRenderer({
@@ -1586,11 +1613,29 @@
           antialias: !this.isMobileDevice,
           powerPreference: 'high-performance'
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        this.renderer.setSize(window.innerWidth, window.innerHeight, false);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x4d7c0f, 0.78);
+        this.scene.add(hemiLight);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+        this.scene.add(ambientLight);
+
+        this.sunLight = new THREE.DirectionalLight(0xfff9e6, 1.32);
+        this.sunLight.position.set(85, 130, 75);
+        this.sunLight.castShadow = true;
+        this.sunLight.shadow.mapSize.set(2048, 2048);
+        this.sunLight.shadow.camera.near = 10;
+        this.sunLight.shadow.camera.far = 320;
+        const d = 68;
+        this.sunLight.shadow.camera.left = -d;
+        this.sunLight.shadow.camera.right = d;
+        this.sunLight.shadow.camera.top = d;
+        this.sunLight.shadow.camera.bottom = -d;
+        this.sunLight.shadow.bias = -0.0005;
+        this.scene.add(this.sunLight);
 
         this.worldGroup = new THREE.Group();
         this.modeGroup = new THREE.Group();
@@ -1598,41 +1643,45 @@
         this.scene.add(this.worldGroup);
         this.scene.add(this.modeGroup);
         this.scene.add(this.fxGroup);
-
-        // Multi-source Daylight Lighting
-        const hemiLight = new THREE.HemisphereLight(0xeef8ff, 0x4f7f38, 0.98);
-        hemiLight.position.set(0, 120, 0);
-        this.scene.add(hemiLight);
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.34);
-        this.scene.add(ambientLight);
-
-        this.sunLight = new THREE.DirectionalLight(0xfff9e6, 1.32);
-        this.sunLight.position.set(70, 115, 55);
-        this.sunLight.castShadow = true;
-        this.sunLight.shadow.mapSize.set(2048, 2048);
-        this.sunLight.shadow.camera.near = 10;
-        this.sunLight.shadow.camera.far = 310;
-        const d = 88;
-        this.sunLight.shadow.camera.left = -d;
-        this.sunLight.shadow.camera.right = d;
-        this.sunLight.shadow.camera.top = d;
-        this.sunLight.shadow.camera.bottom = -d;
-        this.sunLight.shadow.bias = -0.0005;
-        this.scene.add(this.sunLight);
       }
 
       // -----------------------------------------------------------------------
-      // OPEN GRASS FIELD, TREES, ROCKS, SKY DOME & CLOUDS
+      // OPEN MAPS (CLASSIC GRASSLAND, TOWN, CITY) & DYNAMIC SEASONS
       // -----------------------------------------------------------------------
+      _clearWorldEnvironment() {
+        while (this.worldGroup.children.length > 0) {
+          this.worldGroup.remove(this.worldGroup.children[0]);
+        }
+        this.treeColliders = [];
+        this.boulderColliders = [];
+        this.boxColliders = [];
+        this.clouds = [];
+        this.grassMesh = null;
+        this.grassData = [];
+        this.weatherParticles = null;
+        this.weatherData = [];
+      }
+
       _buildEnvironment() {
-        // 1. Open Blue Sky Dome
+        this._clearWorldEnvironment();
+        const mapId = this.activeMap;
+        const seasonId = this.activeSeason;
+        ACTIVE_TERRAIN_MAP = mapId;
+        const sc = SEASON_CONFIGS[seasonId] || SEASON_CONFIGS.SPRING;
+
+        // Apply Season Atmosphere, Sky & Sunlight
+        this.scene.background = new THREE.Color(sc.skyBg);
+        this.scene.fog.color.setHex(sc.fogColor);
+        this.sunLight.color.setHex(sc.sunColor);
+        this.sunLight.intensity = sc.sunIntensity;
+
+        // 1. Open Sky Dome
         const skyGeo = new THREE.SphereGeometry(850, 32, 20);
         const posAttr = skyGeo.attributes.position;
         const colors = new Float32Array(posAttr.count * 3);
-        const cHorizon = new THREE.Color(0xe6f5ff);
-        const cMid = new THREE.Color(0x7cc4fa);
-        const cZenith = new THREE.Color(0x2f7ed8);
+        const cHorizon = new THREE.Color(sc.horizon);
+        const cMid = new THREE.Color(sc.mid);
+        const cZenith = new THREE.Color(sc.zenith);
         const tmpColor = new THREE.Color();
 
         for (let i = 0; i < posAttr.count; i++) {
@@ -1657,12 +1706,16 @@
         // Glowing Sun Disc & Fluffy Clouds
         const sunDisc = new THREE.Mesh(
           new THREE.SphereGeometry(16, 20, 20),
-          new THREE.MeshBasicMaterial({ color: 0xfff8cc, fog: false })
+          new THREE.MeshBasicMaterial({ color: sc.sunColor, fog: false })
         );
         sunDisc.position.set(220, 330, 175);
         this.worldGroup.add(sunDisc);
 
-        const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xdbeafe, emissiveIntensity: 0.25 });
+        const cloudMat = new THREE.MeshLambertMaterial({
+          color: seasonId === 'WINTER' ? 0xe2e8f0 : 0xffffff,
+          emissive: seasonId === 'AUTUMN' ? 0xfed7aa : 0xdbeafe,
+          emissiveIntensity: 0.25
+        });
         const puffGeo = new THREE.DodecahedronGeometry(1, 1);
         for (let i = 0; i < 18; i++) {
           const cg = new THREE.Group();
@@ -1681,7 +1734,7 @@
           this.clouds.push({ group: cg, speed: 1.0 + (i % 4) * 0.4 });
         }
 
-        // 2. Rolling Open Grass Terrain Mesh
+        // 2. Terrain Mesh (Map-Specific Ground & Season Colors)
         const size = 280;
         const segs = 96;
         const groundGeo = new THREE.PlaneGeometry(size, size, segs, segs);
@@ -1689,22 +1742,46 @@
         const gPos = groundGeo.attributes.position;
         const gCol = new Float32Array(gPos.count * 3);
 
-        const colMeadow = new THREE.Color(0x5ea33b);
-        const colLush = new THREE.Color(0x4a8c2e);
-        const colPath = new THREE.Color(0xb6a478);
+        const colMeadow = new THREE.Color(sc.grassA);
+        const colLush = new THREE.Color(sc.grassB);
+        const colPath = new THREE.Color(sc.path);
+        const colAsphalt = new THREE.Color(seasonId === 'WINTER' ? 0x94a3b8 : 0x334155);
+        const colSidewalk = new THREE.Color(seasonId === 'WINTER' ? 0xe2e8f0 : 0x94a3b8);
 
         for (let i = 0; i < gPos.count; i++) {
           const vx = gPos.getX(i);
           const vz = gPos.getZ(i);
-          const vy = terrainHeight(vx, vz);
+          const vy = terrainHeight(vx, vz, mapId);
           gPos.setY(i, vy);
 
-          const distFountain = Math.hypot(vx, vz - 4);
           const patch = Math.sin(vx * 0.11) * Math.cos(vz * 0.11) * 0.5 + 0.5;
           tmpColor.copy(colMeadow).lerp(colLush, patch);
-          if (distFountain < 9.5) {
-            tmpColor.lerp(colPath, 1 - distFountain / 9.5);
+
+          if (mapId === 'CLASSIC') {
+            const distFountain = Math.hypot(vx, vz - 4);
+            if (distFountain < 9.5) {
+              tmpColor.lerp(colPath, 1 - distFountain / 9.5);
+            }
+          } else if (mapId === 'TOWN') {
+            const distSq = Math.hypot(vx, vz - 2);
+            const onRoad = Math.abs(vx) < 3.4 || Math.abs(vz - 2) < 3.4;
+            if (distSq < 13.5 || onRoad) {
+              tmpColor.copy(colPath);
+            }
+          } else if (mapId === 'CITY') {
+            // Paved asphalt roads + sidewalks + North Civic Park grass
+            const inPark = Math.abs(vx) < 13 && vz < -12 && vz > -34;
+            const onRoadX = Math.abs(vz - 2) < 5.5 || Math.abs(vz + 18) < 4.5 || Math.abs(vz - 22) < 4.5;
+            const onRoadZ = Math.abs(vx) < 5.5 || Math.abs(vx + 22) < 4.5 || Math.abs(vx - 22) < 4.5;
+            if (inPark) {
+              tmpColor.copy(colMeadow).lerp(colLush, patch);
+            } else if (onRoadX || onRoadZ) {
+              tmpColor.copy(colAsphalt);
+            } else {
+              tmpColor.copy(colSidewalk);
+            }
           }
+
           gCol[i * 3] = tmpColor.r;
           gCol[i * 3 + 1] = tmpColor.g;
           gCol[i * 3 + 2] = tmpColor.b;
@@ -1714,32 +1791,435 @@
 
         const groundMesh = new THREE.Mesh(
           groundGeo,
-          new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0.02 })
+          new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0.03 })
         );
         groundMesh.receiveShadow = true;
         this.worldGroup.add(groundMesh);
 
-        // 3. Central Stone Plaza Fountain
-        this._buildStoneFountain(0, 4);
+        // 3. Build Map-Specific Landmarks, Buildings & Sniper Perches
+        if (mapId === 'CLASSIC') {
+          this._buildClassicMapFeatures(sc);
+        } else if (mapId === 'TOWN') {
+          this._buildTownMapFeatures(sc);
+        } else if (mapId === 'CITY') {
+          this._buildCityMapFeatures(sc);
+        }
 
-        // 4. Instanced Swaying Grass Blades (Scaled dynamically via Graphics Settings)
-        this._buildInstancedGrass(14000);
+        // 4. Instanced Swaying Grass Blades (Classic, Town & City Park)
+        this._buildInstancedGrass(mapId === 'CITY' ? 2800 : mapId === 'TOWN' ? 8500 : 14000, sc, mapId);
 
-        // 5. Scattered Trees & Mossy Boulders
-        this._buildTreesAndRocks();
+        // 5. Season Weather Particles (Winter Snowflakes / Autumn Falling Orange Leaves)
+        this._buildSeasonParticles(sc);
       }
 
-      _buildStoneFountain(fx, fz) {
+      _buildClassicMapFeatures(sc) {
+        this._buildStoneFountain(0, 4, sc);
+        this._buildTreesAndRocks(sc);
+
+        // Build Camouflaged Sniper Burrow at (0, z=36) overlooking the entire valley
+        const bx = 0;
+        const bz = 36;
+        const by = terrainHeight(bx, bz, 'CLASSIC');
+        const burrowGroup = new THREE.Group();
+        burrowGroup.position.set(bx, by, bz);
+
+        const earthMat = new THREE.MeshStandardMaterial({
+          color: sc.snowCap ? 0xe2e8f0 : 0x5c4033,
+          roughness: 0.95
+        });
+        const timberMat = new THREE.MeshStandardMaterial({ color: 0x4a3219, roughness: 0.88 });
+        const camoMat = new THREE.MeshStandardMaterial({ color: sc.leafA, roughness: 0.85 });
+
+        // U-shaped earthen berm surrounding the sniper burrow (open toward North -Z)
+        const leftBerm = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.05, 3.2), earthMat);
+        leftBerm.position.set(-1.45, 0.52, 0.2);
+        leftBerm.castShadow = true;
+        leftBerm.receiveShadow = true;
+        burrowGroup.add(leftBerm);
+
+        const rightBerm = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.05, 3.2), earthMat);
+        rightBerm.position.set(1.45, 0.52, 0.2);
+        rightBerm.castShadow = true;
+        rightBerm.receiveShadow = true;
+        burrowGroup.add(rightBerm);
+
+        const backBerm = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.25, 1.1), earthMat);
+        backBerm.position.set(0, 0.62, 1.45);
+        backBerm.castShadow = true;
+        burrowGroup.add(backBerm);
+
+        // Low front firing lip (0.62m high so standing sniper rifle clears cleanly)
+        const frontLip = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.62, 0.65), earthMat);
+        frontLip.position.set(0, 0.31, -1.25);
+        burrowGroup.add(frontLip);
+
+        // Overhead timber & foliage camouflage canopy (2.45m high so camera & scope are unobstructed)
+        [[-1.3, -1.1], [1.3, -1.1], [-1.3, 1.2], [1.3, 1.2]].forEach(([px, pz]) => {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 2.45, 8), timberMat);
+          post.position.set(px, 1.22, pz);
+          burrowGroup.add(post);
+        });
+        const canopy = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.18, 3.1), camoMat);
+        canopy.position.set(0, 2.45, 0.05);
+        canopy.castShadow = true;
+        burrowGroup.add(canopy);
+
+        this.worldGroup.add(burrowGroup);
+      }
+
+      _buildTownMapFeatures(sc) {
+        this._buildStoneFountain(0, 2, sc);
+
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xf1e8d9, roughness: 0.85 });
+        const timberMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.85 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: sc.roofTint, roughness: 0.78 });
+
+        // 1. Tall Town Watchtower with Crow's Nest at (0, z=32)
+        const tx = 0;
+        const tz = 32;
+        const ty = terrainHeight(tx, tz, 'TOWN');
+        const towerGroup = new THREE.Group();
+        towerGroup.position.set(tx, ty, tz);
+
+        const nestHeight = 9.5;
+        // 4 Heavy Timber Support Legs
+        [[-1.4, -1.4], [1.4, -1.4], [-1.4, 1.4], [1.4, 1.4]].forEach(([lx, lz]) => {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.32, nestHeight + 1.2, 0.32), timberMat);
+          leg.position.set(lx, (nestHeight + 1.2) / 2, lz);
+          leg.castShadow = true;
+          towerGroup.add(leg);
+        });
+        // Cross-bracing tiers
+        [3.0, 6.2].forEach((by) => {
+          const braceX = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.24, 3.1), timberMat);
+          braceX.position.y = by;
+          towerGroup.add(braceX);
+        });
+        // Crow's Nest Platform Floor
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.35, 3.6), timberMat);
+        deck.position.y = nestHeight;
+        deck.castShadow = true;
+        deck.receiveShadow = true;
+        towerGroup.add(deck);
+
+        // Waist-high Crow's Nest Railing (0.78m high so sniper rifle aims down cleanly)
+        const railPositions = [
+          [0, nestHeight + 0.55, -1.72, 3.6, 0.16, 0.16],
+          [0, nestHeight + 0.55, 1.72, 3.6, 0.16, 0.16],
+          [-1.72, nestHeight + 0.55, 0, 0.16, 0.16, 3.6],
+          [1.72, nestHeight + 0.55, 0, 0.16, 0.16, 3.6]
+        ];
+        railPositions.forEach(([rx, ry, rz, rw, rh, rd]) => {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(rw, rh, rd), timberMat);
+          rail.position.set(rx, ry, rz);
+          towerGroup.add(rail);
+        });
+
+        // Pitched Watchtower Roof Canopy (3.2m above nest floor)
+        const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(2.85, 1.6, 4), roofMat);
+        towerRoof.position.y = nestHeight + 3.4;
+        towerRoof.rotation.y = Math.PI / 4;
+        towerRoof.castShadow = true;
+        towerGroup.add(towerRoof);
+
+        this.worldGroup.add(towerGroup);
+        this.boxColliders.push({ x: tx, y: ty, z: tz, hx: 1.8, hy: nestHeight + 1.0, hz: 1.8 });
+
+        // 2. Rustic Town Houses & Cottages around the perimeter
+        const houses = [
+          { x: -24, z: 12, w: 6.5, h: 4.2, d: 5.5, rot: 0.15 },
+          { x: -25, z: -6, w: 7.0, h: 4.6, d: 6.0, rot: 0 },
+          { x: 24, z: 10, w: 6.5, h: 4.4, d: 5.5, rot: -0.15 },
+          { x: 25, z: -8, w: 7.2, h: 4.8, d: 6.2, rot: 0 },
+          { x: -12, z: -26, w: 6.8, h: 4.5, d: 5.5, rot: 0 },
+          { x: 12, z: -26, w: 6.8, h: 4.5, d: 5.5, rot: 0 },
+          { x: -16, z: 24, w: 5.8, h: 3.8, d: 5.0, rot: 0.2 },
+          { x: 16, z: 24, w: 5.8, h: 3.8, d: 5.0, rot: -0.2 }
+        ];
+
+        houses.forEach((hs) => {
+          const hy = terrainHeight(hs.x, hs.z, 'TOWN');
+          const hg = new THREE.Group();
+          hg.position.set(hs.x, hy, hs.z);
+          hg.rotation.y = hs.rot;
+
+          const body = new THREE.Mesh(new THREE.BoxGeometry(hs.w, hs.h, hs.d), wallMat);
+          body.position.y = hs.h / 2;
+          body.castShadow = true;
+          body.receiveShadow = true;
+          hg.add(body);
+
+          const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(hs.w, hs.d) * 0.78, 2.4, 4), roofMat);
+          roof.position.y = hs.h + 1.15;
+          roof.rotation.y = Math.PI / 4;
+          roof.castShadow = true;
+          hg.add(roof);
+
+          // Timber door & windows
+          const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.1, 0.2), timberMat);
+          door.position.set(0, 1.05, hs.d / 2 + 0.05);
+          hg.add(door);
+
+          this.worldGroup.add(hg);
+          this.boxColliders.push({
+            x: hs.x,
+            y: hy,
+            z: hs.z,
+            hx: hs.w * 0.52,
+            hy: hs.h + 1.2,
+            hz: hs.d * 0.52
+          });
+        });
+
+        // 3. Market Stalls & Village Trees
+        const stallColors = [0xdc2626, 0x2563eb, 0xd97706, 0x059669];
+        [[-8, 12], [9, 11], [-9, -10], [9, -10]].forEach(([sx, sz], idx) => {
+          const sy = terrainHeight(sx, sz, 'TOWN');
+          const sg = new THREE.Group();
+          sg.position.set(sx, sy, sz);
+          const table = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.85, 1.4), timberMat);
+          table.position.y = 0.42;
+          table.castShadow = true;
+          sg.add(table);
+
+          const awning = new THREE.Mesh(
+            new THREE.BoxGeometry(2.9, 0.18, 1.8),
+            new THREE.MeshStandardMaterial({ color: sc.snowCap ? 0xf8fafc : stallColors[idx % stallColors.length] })
+          );
+          awning.position.set(0, 2.25, 0);
+          awning.rotation.x = 0.16;
+          sg.add(awning);
+
+          this.worldGroup.add(sg);
+          this.boxColliders.push({ x: sx, y: sy, z: sz, hx: 1.4, hy: 1.1, hz: 0.8 });
+        });
+
+        // Village trees around outskirts
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.9 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: sc.leafA, roughness: 0.82 });
+        [[-34, 18], [-35, -18], [34, 18], [35, -18], [0, -36], [-20, -35], [20, -35]].forEach(([vx, vz]) => {
+          const vy = terrainHeight(vx, vz, 'TOWN');
+          const tg = new THREE.Group();
+          tg.position.set(vx, vy, vz);
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.5, 3.6, 8), trunkMat);
+          trunk.position.y = 1.8;
+          trunk.castShadow = true;
+          tg.add(trunk);
+          const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 1), leafMat);
+          crown.position.y = 4.2;
+          crown.castShadow = true;
+          tg.add(crown);
+          this.worldGroup.add(tg);
+          this.treeColliders.push({ x: vx, z: vz, radius: 0.65 });
+        });
+      }
+
+      _buildCityMapFeatures(sc) {
+        const concreteMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+        const glassMat = new THREE.MeshStandardMaterial({
+          color: 0x1e293b,
+          emissive: 0x0ea5e9,
+          emissiveIntensity: 0.18,
+          roughness: 0.25,
+          metalness: 0.65
+        });
+        const snowCapMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 });
+
+        // 1. Sniper Overlook Building at (0, z=34) — Player stands on its 13.5m rooftop in Sniper Mode!
+        const bx = 0;
+        const bz = 34;
+        const by = terrainHeight(bx, bz, 'CITY');
+        const roofH = 13.5;
+        const bw = 9.0;
+        const bd = 7.5;
+
+        const sniperBldg = new THREE.Group();
+        sniperBldg.position.set(bx, by, bz);
+
+        const towerBody = new THREE.Mesh(new THREE.BoxGeometry(bw, roofH, bd), concreteMat);
+        towerBody.position.y = roofH / 2;
+        towerBody.castShadow = true;
+        towerBody.receiveShadow = true;
+        sniperBldg.add(towerBody);
+
+        // Glass window bands on front facade
+        for (let wy = 2.6; wy < roofH - 1.2; wy += 2.6) {
+          const winBand = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.12, 1.1, bd + 0.12), glassMat);
+          winBand.position.y = wy;
+          sniperBldg.add(winBand);
+        }
+
+        // Low waist-high rooftop parapet (0.72m high so sniper has completely unobstructed view down)
+        const parapetFront = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.72, 0.45), concreteMat);
+        parapetFront.position.set(0, roofH + 0.36, -bd / 2 + 0.22);
+        sniperBldg.add(parapetFront);
+
+        const parapetLeft = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.85, bd), concreteMat);
+        parapetLeft.position.set(-bw / 2 + 0.22, roofH + 0.42, 0);
+        sniperBldg.add(parapetLeft);
+
+        const parapetRight = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.85, bd), concreteMat);
+        parapetRight.position.set(bw / 2 - 0.22, roofH + 0.42, 0);
+        sniperBldg.add(parapetRight);
+
+        this.worldGroup.add(sniperBldg);
+        this.boxColliders.push({ x: bx, y: by, z: bz, hx: bw * 0.5, hy: roofH + 0.4, hz: bd * 0.5 });
+
+        // 2. Surrounding Urban Skyscrapers & Office Blocks
+        const cityBuildings = [
+          { x: -15, z: 12, w: 8.5, h: 16, d: 8.5 },
+          { x: 15, z: 12, w: 8.5, h: 18, d: 8.5 },
+          { x: -15, z: -8, w: 8.5, h: 20, d: 8.5 },
+          { x: 15, z: -8, w: 8.5, h: 15, d: 8.5 },
+          { x: -34, z: 14, w: 10, h: 24, d: 10 },
+          { x: 34, z: 14, w: 10, h: 22, d: 10 },
+          { x: -34, z: -10, w: 10, h: 26, d: 10 },
+          { x: 34, z: -10, w: 10, h: 21, d: 10 },
+          { x: -24, z: -32, w: 11, h: 23, d: 9 },
+          { x: 24, z: -32, w: 11, h: 25, d: 9 }
+        ];
+
+        cityBuildings.forEach((cb) => {
+          const cy = terrainHeight(cb.x, cb.z, 'CITY');
+          const bg = new THREE.Group();
+          bg.position.set(cb.x, cy, cb.z);
+
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(cb.w, cb.h, cb.d), concreteMat);
+          mesh.position.y = cb.h / 2;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          bg.add(mesh);
+
+          for (let wy = 3.0; wy < cb.h - 1.5; wy += 3.2) {
+            const band = new THREE.Mesh(new THREE.BoxGeometry(cb.w + 0.14, 1.3, cb.d + 0.14), glassMat);
+            band.position.y = wy;
+            bg.add(band);
+          }
+
+          if (sc.snowCap) {
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(cb.w + 0.1, 0.35, cb.d + 0.1), snowCapMat);
+            cap.position.y = cb.h + 0.15;
+            bg.add(cap);
+          }
+
+          this.worldGroup.add(bg);
+          this.boxColliders.push({ x: cb.x, y: cy, z: cb.z, hx: cb.w * 0.5, hy: cb.h + 0.3, hz: cb.d * 0.5 });
+        });
+
+        // 3. Street Concrete Barriers (Tactical Cover) & Civic Park Trees
+        const barrierMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+        [[-7, 2], [7, 2], [0, -11], [-11, -18], [11, -18]].forEach(([kx, kz]) => {
+          const ky = terrainHeight(kx, kz, 'CITY');
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.15, 0.75), barrierMat);
+          bar.position.set(kx, ky + 0.58, kz);
+          bar.castShadow = true;
+          this.worldGroup.add(bar);
+          this.boxColliders.push({ x: kx, y: ky, z: kz, hx: 1.65, hy: 1.2, hz: 0.42 });
+        });
+
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: sc.leafA, roughness: 0.82 });
+        [[-8, -24], [8, -24], [-6, -31], [6, -31]].forEach(([px, pz]) => {
+          const py = terrainHeight(px, pz, 'CITY');
+          const tg = new THREE.Group();
+          tg.position.set(px, py, pz);
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 3.2, 8), trunkMat);
+          trunk.position.y = 1.6;
+          tg.add(trunk);
+          const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.9, 1), leafMat);
+          crown.position.y = 3.8;
+          tg.add(crown);
+          this.worldGroup.add(tg);
+          this.treeColliders.push({ x: px, z: pz, radius: 0.55 });
+        });
+      }
+
+      _buildSeasonParticles(sc) {
+        if (sc.weatherType === 'NONE') return;
+        const isSnow = sc.weatherType === 'SNOW';
+        const count = isSnow ? 750 : 450;
+        const geo = isSnow
+          ? new THREE.OctahedronGeometry(0.09, 0)
+          : new THREE.BoxGeometry(0.22, 0.03, 0.14);
+        const mat = new THREE.MeshBasicMaterial({
+          color: isSnow ? 0xffffff : 0xf97316,
+          vertexColors: !isSnow
+        });
+
+        this.weatherParticles = new THREE.InstancedMesh(geo, mat, count);
+        const dummy = new THREE.Object3D();
+        const cLeaf = new THREE.Color();
+        const leafPalette = [0xea580c, 0xf97316, 0xf59e0b, 0xdc2626];
+        this.weatherData = [];
+
+        for (let i = 0; i < count; i++) {
+          const item = {
+            x: (Math.random() - 0.5) * 110,
+            y: 1 + Math.random() * 34,
+            z: (Math.random() - 0.5) * 110,
+            fallSpeed: isSnow ? 1.8 + Math.random() * 1.6 : 1.4 + Math.random() * 1.5,
+            swayPhase: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 4.5
+          };
+          this.weatherData.push(item);
+
+          dummy.position.set(item.x, item.y, item.z);
+          dummy.updateMatrix();
+          this.weatherParticles.setMatrixAt(i, dummy.matrix);
+
+          if (!isSnow) {
+            cLeaf.setHex(leafPalette[i % leafPalette.length]);
+            this.weatherParticles.setColorAt(i, cLeaf);
+          }
+        }
+        this.weatherParticles.instanceMatrix.needsUpdate = true;
+        if (this.weatherParticles.instanceColor) {
+          this.weatherParticles.instanceColor.needsUpdate = true;
+        }
+        this.worldGroup.add(this.weatherParticles);
+      }
+
+      _updateSeasonParticles(dt) {
+        if (!this.weatherParticles || this.weatherData.length === 0) return;
+        const dummy = new THREE.Object3D();
+        const isSnow = this.activeSeason === 'WINTER';
+        for (let i = 0; i < this.weatherData.length; i++) {
+          const p = this.weatherData[i];
+          p.y -= p.fallSpeed * dt;
+          p.x += Math.sin(this.worldTime * 1.5 + p.swayPhase) * (isSnow ? 0.65 : 1.35) * dt;
+          p.z += Math.cos(this.worldTime * 1.2 + p.swayPhase) * (isSnow ? 0.55 : 1.1) * dt;
+
+          if (p.y < terrainHeight(p.x, p.z, this.activeMap)) {
+            p.y = 32 + Math.random() * 6;
+            p.x = this.playerPos.x + (Math.random() - 0.5) * 95;
+            p.z = this.playerPos.z + (Math.random() - 0.5) * 95;
+          }
+
+          dummy.position.set(p.x, p.y, p.z);
+          if (!isSnow) {
+            dummy.rotation.set(
+              this.worldTime * p.rotSpeed,
+              this.worldTime * p.rotSpeed * 0.7,
+              Math.sin(this.worldTime * 2 + p.swayPhase) * 0.8
+            );
+          }
+          dummy.updateMatrix();
+          this.weatherParticles.setMatrixAt(i, dummy.matrix);
+        }
+        this.weatherParticles.instanceMatrix.needsUpdate = true;
+      }
+
+      _buildStoneFountain(fx, fz, sc = SEASON_CONFIGS.SPRING) {
         const fy = terrainHeight(fx, fz);
         const fg = new THREE.Group();
         fg.position.set(fx, fy, fz);
 
-        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+        const stoneMat = new THREE.MeshStandardMaterial({ color: sc.snowCap ? 0xe2e8f0 : 0x94a3b8, roughness: 0.85 });
         const waterMat = new THREE.MeshStandardMaterial({
-          color: 0x38bdf8,
+          color: sc.snowCap ? 0xbae6fd : 0x38bdf8,
           emissive: 0x0284c7,
           emissiveIntensity: 0.25,
-          roughness: 0.2
+          roughness: sc.snowCap ? 0.45 : 0.2
         });
 
         const ring = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.7, 0.75, 20), stoneMat);
@@ -1766,10 +2246,10 @@
         this.boulderColliders.push({ x: fx, y: fy, z: fz, radius: 3.7, height: 2.3 });
       }
 
-      _buildInstancedGrass(count) {
+      _buildInstancedGrass(count, sc = SEASON_CONFIGS.SPRING, mapId = 'CLASSIC') {
         const bladeGeo = new THREE.ConeGeometry(0.055, 0.48, 3);
         bladeGeo.translate(0, 0.24, 0);
-        const bladeMat = new THREE.MeshLambertMaterial({ color: 0x67b340 });
+        const bladeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
         this.grassMesh = new THREE.InstancedMesh(bladeGeo, bladeMat, count);
         const dummy = new THREE.Object3D();
@@ -1778,12 +2258,22 @@
 
         let placed = 0;
         let attempts = 0;
-        while (placed < count && attempts < count * 3) {
+        while (placed < count && attempts < count * 4) {
           attempts++;
-          const gx = (Math.random() - 0.5) * 124;
-          const gz = (Math.random() - 0.5) * 124;
-          if (Math.hypot(gx, gz - 4) < 5.5) continue;
-          const gy = terrainHeight(gx, gz);
+          let gx = (Math.random() - 0.5) * 124;
+          let gz = (Math.random() - 0.5) * 124;
+
+          if (mapId === 'CITY') {
+            // Keep grass inside North Civic Park in City map
+            gx = (Math.random() - 0.5) * 24;
+            gz = -13 - Math.random() * 20;
+          } else if (mapId === 'TOWN') {
+            if (Math.hypot(gx, gz - 2) < 13.5 || Math.abs(gx) < 3.5 || Math.abs(gz - 2) < 3.5) continue;
+          } else {
+            if (Math.hypot(gx, gz - 4) < 5.5) continue;
+          }
+
+          const gy = terrainHeight(gx, gz, mapId);
           const scale = 0.65 + Math.random() * 0.95;
           const rotY = Math.random() * Math.PI * 2;
           const phase = Math.random() * Math.PI * 2;
@@ -1794,7 +2284,8 @@
           dummy.updateMatrix();
           this.grassMesh.setMatrixAt(placed, dummy.matrix);
 
-          cTint.setHSL(0.25 + (Math.random() - 0.5) * 0.04, 0.56, 0.36 + Math.random() * 0.14);
+          const [hBase, sBase, lBase] = sc.bladeHsl;
+          cTint.setHSL(hBase + (Math.random() - 0.5) * 0.04, sBase, lBase + (Math.random() - 0.5) * 0.1);
           this.grassMesh.setColorAt(placed, cTint);
 
           this.grassData.push({ x: gx, y: gy - 0.04, z: gz, scale, rotY, phase });
@@ -1806,7 +2297,7 @@
         this.worldGroup.add(this.grassMesh);
       }
 
-      _buildTreesAndRocks() {
+      _buildTreesAndRocks(sc = SEASON_CONFIGS.SPRING) {
         const treeCoords = [
           [-26, 12], [-30, 2], [-21, -4], [-34, -14], [-18, 22],
           [28, 16], [33, -6], [20, -18], [36, -24], [14, 28],
@@ -1815,15 +2306,15 @@
         ];
 
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.9 });
-        const leafMatA = new THREE.MeshStandardMaterial({ color: 0x3b7a2a, roughness: 0.82 });
-        const leafMatB = new THREE.MeshStandardMaterial({ color: 0x4c9436, roughness: 0.8 });
+        const leafMatA = new THREE.MeshStandardMaterial({ color: sc.leafA, roughness: 0.82 });
+        const leafMatB = new THREE.MeshStandardMaterial({ color: sc.leafB, roughness: 0.8 });
 
         treeCoords.forEach(([tx, tz], idx) => {
           const ty = terrainHeight(tx, tz);
           const tg = new THREE.Group();
           tg.position.set(tx, ty, tz);
-          const sc = 0.88 + (idx % 4) * 0.16;
-          tg.scale.setScalar(sc);
+          const scVal = 0.88 + (idx % 4) * 0.16;
+          tg.scale.setScalar(scVal);
 
           const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.52, 3.6, 8), trunkMat);
           trunk.position.y = 1.8;
@@ -1847,7 +2338,7 @@
           tg.add(c3);
 
           this.worldGroup.add(tg);
-          this.treeColliders.push({ x: tx, z: tz, radius: 0.65 * sc });
+          this.treeColliders.push({ x: tx, z: tz, radius: 0.65 * scVal });
         });
 
         const rockSpecs = [
@@ -1863,7 +2354,11 @@
           { x: 0, z: 27, rx: 1.7, ry: 1.25, rz: 1.4 }
         ];
 
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.92, flatShading: true });
+        const rockMat = new THREE.MeshStandardMaterial({
+          color: sc.snowCap ? 0xdbeafe : 0x78716c,
+          roughness: 0.92,
+          flatShading: true
+        });
         rockSpecs.forEach((r, idx) => {
           const ry = terrainHeight(r.x, r.z);
           const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), rockMat);
@@ -2368,6 +2863,65 @@
         this._updateAmmoMaterial();
         this.sound.playPurchase();
         this.renderShop();
+        this._updateHUD();
+        this._refreshCreditsUI();
+      }
+
+      _applyUpgradeStats(refillAll = false) {
+        const stats = this._getComputedStats();
+        this.playerMaxHP = stats.maxHP;
+        this.maxAmmo = stats.maxAmmo;
+        if (refillAll) {
+          this.playerHP = this.playerMaxHP;
+          this.ammoRemaining = this.maxAmmo;
+          this.focusEnergy = 100;
+          this.bulletFuel = 100;
+        } else {
+          this.playerHP = Math.min(this.playerMaxHP, this.playerHP);
+          this.ammoRemaining = Math.min(this.maxAmmo, this.ammoRemaining);
+        }
+        this._updateAmmoMaterial();
+      }
+
+      _getComputedStats() {
+        const u = this.profile.upgrades;
+        const finLv = u.finAgility || 1;
+        const focusLv = u.focusCap || 1;
+        const propLv = u.propellant || 1;
+        const opticLv = u.optics || 1;
+        const armorLv = u.armorAmmo || 1;
+
+        return {
+          turnMultiplier: 1.0 + (finLv - 1) * 0.22,
+          fuelDrainScale: 1.0 / (1.0 + (focusLv - 1) * 0.25),
+          focusRechargeRate: 18 + (focusLv - 1) * 4.5,
+          cruiseSpeed: 14.0 + (propLv - 1) * 2.2,
+          boostSpeed: 24.0 + (propLv - 1) * 3.0,
+          scopeFov: Math.max(11, 24 - (opticLv - 1) * 3.2),
+          laserRange: 55 + (opticLv - 1) * 18,
+          maxHP: 100 + (armorLv - 1) * 25,
+          maxAmmo: 6 + (armorLv - 1)
+        };
+      }
+
+      _awardCredits(baseAmount) {
+        const mult = this.profile.equippedAmmo === 'GOLD_TRACER' ? 1.25 : 1.0;
+        const earned = Math.round(baseAmount * mult);
+        this.profile.credits += earned;
+        this.score += earned;
+        this._refreshCreditsUI();
+        this._saveProfileToCloud();
+        return earned;
+      }
+
+      _refreshCreditsUI() {
+        const val = this.profile.credits.toLocaleString();
+        const hudEl = document.getElementById('hud-credits');
+        const menuEl = document.getElementById('menu-credits-val');
+        const shopEl = document.getElementById('shop-credits-balance');
+        if (hudEl) hudEl.textContent = val;
+        if (menuEl) menuEl.textContent = val;
+        if (shopEl) shopEl.textContent = `${val} PTS`;
       }
 
       openSettings() {
@@ -2385,17 +2939,12 @@
       closeSettings() {
         document.getElementById('settings-modal').classList.add('hidden');
         this.activeModal = null;
-        this._saveProfileToCloud();
-        this.applyGraphicsSettings();
         this._updateMobileControlsVisibility();
         if (!this.isMobileDevice && (this.stateBeforeModal === 'SHOOTER_MODE' || this.stateBeforeModal === 'BULLET_MODE')) {
           this._requestPointerLockSafe();
         }
       }
 
-      // -----------------------------------------------------------------------
-      // GAME MODE SETUP & SCATTERED AMMO CRATES
-      // -----------------------------------------------------------------------
       _clearDynamicEntities() {
         while (this.modeGroup.children.length > 0) {
           this.modeGroup.remove(this.modeGroup.children[0]);
@@ -2414,15 +2963,34 @@
 
       _spawnScenicDemoWorld() {
         this._clearDynamicEntities();
-        this._scatterFieldAmmoCrates();
-        this._spawnAmbientWildlife(6, 0, 0);
+        this._spawnAmbientWildlife(5, 3, 2);
       }
 
-      startMode(mode) {
+      startMode(mode, mapOverride = null, seasonOverride = null, summerTimeOverride = null) {
         this.sound.init();
-        this._leaveMultiplayerLobby();
+        if (mode !== 'MULTIPLAYER') {
+          this._leaveMultiplayerLobby();
+        }
         this.activeMode = mode;
         this.selectedMode = mode;
+        this.activeMap = mapOverride || this.selectedMap || 'CLASSIC';
+        this.activeSeason = seasonOverride || this.selectedSeason || 'SPRING';
+
+        // Rebuild world with selected Map & Season
+        this._buildEnvironment();
+        this.applyGraphicsSettings();
+
+        // Configure Summer 3-minute (180s) Dehydration Timer (customizable in Multiplayer)
+        this.hydrationMax = summerTimeOverride || 180;
+        this.hydrationRemaining = this.hydrationMax;
+        const hydrationBox = document.getElementById('hud-hydration-box');
+        if (hydrationBox) {
+          if (this.activeSeason === 'SUMMER') {
+            hydrationBox.classList.remove('hidden');
+          } else {
+            hydrationBox.classList.add('hidden');
+          }
+        }
 
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
@@ -2439,9 +3007,10 @@
         this.shotsHit = 0;
         this._applyUpgradeStats(true);
 
-        this.playerPos.set(0, terrainHeight(0, 44), 44);
+        // Set initial player spawn position (Map-specific Vantage Perch for Crowd Sniper)
+        this._placePlayerForModeAndMap();
         this.shooterYaw = 0;
-        this.shooterPitch = -0.02;
+        this.shooterPitch = this.activeMode === 'CROWD_SNIPER' && this.activeMap !== 'CLASSIC' ? -0.24 : -0.02;
         this.scopeToggle = false;
         this.isScoped = false;
         this.playerGroup.visible = true;
@@ -2457,18 +3026,24 @@
           this.combatWave = 1;
           this._spawnCombatWave(1);
           this._spawnAmbientWildlife(6, 0, 0);
-          this._triggerCallout('COMBAT OPS // WAVE 1', 'TAKE COVER & NEUTRALIZE ARMED HOSTILES', 'text-rose-400');
+          this._triggerCallout(`COMBAT OPS // ${this.activeMap}`, 'TAKE COVER & NEUTRALIZE ARMED HOSTILES', 'text-rose-400');
         } else if (mode === 'WILDLIFE_HUNT') {
           radioPanel.classList.add('hidden');
           hpSection.classList.add('hidden');
           this.huntQuota = { DEER: 3, BOAR: 3 };
           this._spawnAmbientWildlife(6, 4, 4);
-          this._triggerCallout('WILDLIFE HUNT ACTIVE', 'HUNT 3 STAGS & 3 BOARS • SPARE PROTECTED HARES', 'text-amber-300');
+          this._triggerCallout(`WILDLIFE HUNT // ${this.activeMap}`, 'HUNT 3 STAGS & 3 BOARS • SPARE PROTECTED HARES', 'text-amber-300');
         } else if (mode === 'CROWD_SNIPER') {
           radioPanel.classList.remove('hidden');
           hpSection.classList.add('hidden');
           this._spawnCrowdSniperScenario();
-          this._triggerCallout('CROWD SNIPER DEPLOYED', 'LISTEN TO TACTICAL RADIO INTEL TO IDENTIFY TARGET', 'text-emerald-300');
+          const perchMsg =
+            this.activeMap === 'CITY'
+              ? 'ROOFTOP OVERLOOK • POSITION LOCKED'
+              : this.activeMap === 'TOWN'
+              ? 'WATCHTOWER NEST • POSITION LOCKED'
+              : 'HIDDEN BURROW • POSITION LOCKED';
+          this._triggerCallout(`CROWD SNIPER // ${this.activeMap}`, perchMsg, 'text-emerald-300');
         }
 
         this._updateScopeUI(false);
@@ -2480,6 +3055,30 @@
         if (!this.isMobileDevice) {
           this._requestPointerLockSafe();
         }
+      }
+
+      _placePlayerForModeAndMap() {
+        if (this.activeMode === 'CROWD_SNIPER') {
+          if (this.activeMap === 'CITY') {
+            // Placed on top of the overlook building roof at (0, roofTopY, 31.2)
+            const baseY = terrainHeight(0, 34, 'CITY');
+            this.playerPos.set(0, baseY + 13.5, 31.2);
+            return;
+          }
+          if (this.activeMap === 'TOWN') {
+            // Placed inside the tall watchtower's crow's nest at (0, nestFloorY, 31.2)
+            const baseY = terrainHeight(0, 32, 'TOWN');
+            this.playerPos.set(0, baseY + 9.68, 31.2);
+            return;
+          }
+          // CLASSIC map: hidden inside the camouflaged earthen sniper burrow at (0, y, 36)
+          this.playerPos.set(0, terrainHeight(0, 36, 'CLASSIC'), 36);
+          return;
+        }
+
+        // Standard mobile deployment spawn for Combat Ops / Wildlife Hunt
+        const spawnZ = this.activeMap === 'CITY' ? 24 : 44;
+        this.playerPos.set(0, terrainHeight(0, spawnZ, this.activeMap), spawnZ);
       }
 
       openModeSelection() {
@@ -2732,7 +3331,8 @@
       _spawnCrowdSniperScenario() {
         const totalCivilians = 24;
         const targetIndex = Math.floor(Math.random() * totalCivilians);
-        const targetZone = CROWD_ZONES[Math.floor(Math.random() * CROWD_ZONES.length)];
+        const mapZones = CROWD_ZONES_BY_MAP[this.activeMap] || CROWD_ZONES_BY_MAP.CLASSIC;
+        const targetZone = mapZones[Math.floor(Math.random() * mapZones.length)];
         const targetHat = CROWD_HATS[Math.floor(Math.random() * (CROWD_HATS.length - 1))];
         const targetJacket = CROWD_JACKETS[Math.floor(Math.random() * CROWD_JACKETS.length)];
 
@@ -2744,7 +3344,7 @@
 
         for (let i = 0; i < totalCivilians; i++) {
           const isTarget = i === targetIndex;
-          const zone = isTarget ? targetZone : CROWD_ZONES[i % CROWD_ZONES.length];
+          const zone = isTarget ? targetZone : mapZones[i % mapZones.length];
           let hat = isTarget ? targetHat : CROWD_HATS[(i * 3) % CROWD_HATS.length];
           let jacket = isTarget ? targetJacket : CROWD_JACKETS[(i * 5 + 1) % CROWD_JACKETS.length];
 
@@ -2939,11 +3539,12 @@
       }
 
       _update(dt) {
-        // 1. Drifting Clouds & Swaying Grass
+        // 1. Drifting Clouds, Weather Particles & Swaying Grass
         this.clouds.forEach((c) => {
           c.group.position.x += c.speed * dt;
           if (c.group.position.x > 260) c.group.position.x = -260;
         });
+        this._updateSeasonParticles(dt);
 
         if (this.grassMesh && this.grassMesh.visible && this.grassMesh.count > 0) {
           const dummy = new THREE.Object3D();
@@ -2970,11 +3571,12 @@
           this._updateAmmoCrates(dt);
         }
 
-        // 4. Update Ragdolls & Particles
-        this._updateRagdollsAndParticles(dt);
-
-        // 5. Mode-specific updates (Enemy AI, Crowd Civilians, Radio Timer, Multiplayer Sync)
+        // 5. Mode-specific updates (Enemy AI, Crowd Civilians, Radio Timer, Summer Dehydration, Multiplayer Sync)
         if (this.state !== 'MENU' && this.state !== 'MISSION_END') {
+          if (this.activeSeason === 'SUMMER') {
+            this._updateSummerDehydration(dt);
+          }
+
           if (this.activeMode === 'COMBAT_OPS') {
             this._updateCombatEnemiesAndTracers(dt);
             this._updatePlayerHealthRegen(dt);
@@ -3021,20 +3623,24 @@
         if (this.keys['ArrowRight']) this.shooterYaw -= keyTurnSpeed * dt;
         if (this.keys['ArrowUp']) this.shooterPitch += keyTurnSpeed * 0.7 * dt;
         if (this.keys['ArrowDown']) this.shooterPitch -= keyTurnSpeed * 0.7 * dt;
-        this.shooterPitch = Math.max(-0.62, Math.min(0.68, this.shooterPitch));
+        const minPitch = this.activeMode === 'CROWD_SNIPER' ? -0.95 : -0.62;
+        this.shooterPitch = Math.max(minPitch, Math.min(0.68, this.shooterPitch));
 
-        // WASD + Mobile Virtual Stick movement across the grass field (with Shift/Touch sprint)
-        let moveX = this.mobileMoveX;
-        let moveZ = this.mobileMoveZ;
-        if (this.keys['KeyA']) moveX -= 1;
-        if (this.keys['KeyD']) moveX += 1;
-        if (this.keys['KeyW']) moveZ -= 1;
-        if (this.keys['KeyS']) moveZ += 1;
+        // In CROWD_SNIPER mode, the sniper stays hidden/locked in their perch or burrow and cannot move
+        const isImmobilizedSniper = this.activeMode === 'CROWD_SNIPER';
+        let moveX = isImmobilizedSniper ? 0 : this.mobileMoveX;
+        let moveZ = isImmobilizedSniper ? 0 : this.mobileMoveZ;
+        if (!isImmobilizedSniper) {
+          if (this.keys['KeyA']) moveX -= 1;
+          if (this.keys['KeyD']) moveX += 1;
+          if (this.keys['KeyW']) moveZ -= 1;
+          if (this.keys['KeyS']) moveZ += 1;
+        }
 
-        const isSprinting = Boolean(this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.mobileSprint);
+        const isSprinting = Boolean(!isImmobilizedSniper && (this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.mobileSprint));
         const moveSpeed = isSprinting ? 10.5 : 7.0;
 
-        if (Math.hypot(moveX, moveZ) > 0.05) {
+        if (!isImmobilizedSniper && Math.hypot(moveX, moveZ) > 0.05) {
           const forwardFlat = new THREE.Vector3(-Math.sin(this.shooterYaw), 0, -Math.cos(this.shooterYaw));
           const rightFlat = new THREE.Vector3(Math.cos(this.shooterYaw), 0, -Math.sin(this.shooterYaw));
           const moveVec = new THREE.Vector3()
@@ -3053,8 +3659,14 @@
           this.walkCycle = 0;
         }
 
-        const groundY = terrainHeight(this.playerPos.x, this.playerPos.z);
-        this.playerPos.y = groundY;
+        // Keep elevated perch elevation when in City rooftop or Town watchtower nest
+        if (isImmobilizedSniper && this.activeMap === 'CITY') {
+          this.playerPos.y = terrainHeight(0, 34, 'CITY') + 13.5;
+        } else if (isImmobilizedSniper && this.activeMap === 'TOWN') {
+          this.playerPos.y = terrainHeight(0, 32, 'TOWN') + 9.68;
+        } else {
+          this.playerPos.y = terrainHeight(this.playerPos.x, this.playerPos.z, this.activeMap);
+        }
 
         this.playerGroup.position.copy(this.playerPos);
         this.playerGroup.rotation.y = this.shooterYaw;
@@ -3118,450 +3730,63 @@
         const p = origin.clone();
         for (let d = 1; d <= maxDist; d += step) {
           p.copy(origin).addScaledVector(dir, d);
-          if (p.y <= terrainHeight(p.x, p.z) + 0.05) return d;
+          if (p.y <= terrainHeight(p.x, p.z, this.activeMap) + 0.05) return d;
           for (let i = 0; i < this.boulderColliders.length; i++) {
             const b = this.boulderColliders[i];
             if (Math.hypot(p.x - b.x, p.z - b.z) < b.radius && p.y < b.y + b.height) return d;
+          }
+          for (let i = 0; i < this.boxColliders.length; i++) {
+            const box = this.boxColliders[i];
+            if (Math.abs(p.x - box.x) < box.hx && Math.abs(p.z - box.z) < box.hz && p.y < box.y + box.hy) return d;
           }
         }
         return maxDist;
       }
 
-      _updateScopeUI(scoped) {
-        const btn = document.getElementById('mbtn-scope');
-        if (btn) btn.classList.toggle('active', scoped);
-      }
+      _updateSummerDehydration(dt) {
+        if (this.hydrationRemaining <= 0) return;
+        this.hydrationRemaining = Math.max(0, this.hydrationRemaining - dt);
+        this._updateHydrationUI();
 
-      // -----------------------------------------------------------------------
-      // FIRING & SLOW STEERABLE GUIDED BULLET FLIGHT
-      // -----------------------------------------------------------------------
-      fireBullet() {
-        if (this.state !== 'SHOOTER_MODE' || this.activeModal) return;
-        if (this.ammoRemaining <= 0) {
+        if (this.hydrationRemaining <= 0) {
           this.sound.playPenaltyBuzz();
-          this._triggerCallout('OUT OF AMMO', 'FIND A GREEN AMMO CRATE IN THE GRASS', 'text-rose-400');
-          return;
+          if (this.activeMode === 'MULTIPLAYER') {
+            this.mpDeaths += 1;
+            this.mpRespawnTimer = 3.0;
+            this.hydrationRemaining = this.hydrationMax;
+            if (this.state === 'BULLET_MODE') this._returnToShooter();
+            this._updateScopeUI(false);
+            this.playerGroup.visible = false;
+            this._pushMpKillFeed(`${this.mpCallsign} died of summer dehydration`);
+            this._triggerCallout('DEHYDRATION!', 'SUMMER HEATSTROKE • RESPAWNING...', 'text-rose-400');
+            this._publishMultiplayerState();
+          } else {
+            this._finishMission(
+              false,
+              'SUMMER DEHYDRATION',
+              'SUCCUMBED TO HEATSTROKE',
+              'The 3-minute summer hydration timer expired before you completed the mission!'
+            );
+          }
         }
-
-        const stats = this._getComputedStats();
-        this.ammoRemaining -= 1;
-        this.shotsFired += 1;
-        this.sound.playRifleShot();
-
-        this.scopeToggle = false;
-        this.isScoped = false;
-        this._updateScopeUI(false);
-        this.playerGroup.visible = true;
-
-        this.playerGroup.updateMatrixWorld(true);
-        const spawnPos = new THREE.Vector3();
-        this.muzzleNode.getWorldPosition(spawnPos);
-        if (this.isScoped) {
-          spawnPos.set(this.playerPos.x, this.playerPos.y + 1.62, this.playerPos.z);
-        }
-
-        this.bulletPos.copy(spawnPos);
-        this.bulletYaw = this.shooterYaw;
-        this.bulletPitch = this.shooterPitch;
-        this.targetBulletYaw = this.shooterYaw;
-        this.targetBulletPitch = this.shooterPitch;
-        this.bulletSpeed = stats.cruiseSpeed;
-        this.bulletFuel = 100;
-        this.bulletRoll = 0;
-        this.trailPoints = [this.bulletPos.clone()];
-
-        this._spawnSparks(spawnPos, 0xfbbf24, 14, 7);
-
-        this.bulletTrailRibbon.visible = this.settings.particles === 'FULL';
-        this.bulletTrailCore.visible = true;
-        this.bulletGroup.visible = true;
-
-        this.state = 'BULLET_MODE';
-        this._updateMobileControlsVisibility();
-        this._updateHUD();
       }
 
-      detonateBulletEarly() {
-        if (this.state !== 'BULLET_MODE') return;
-        this.sound.playSurfaceImpact();
-        this._spawnSparks(this.bulletPos, 0x94a3b8, 12, 6);
-        this._enterImpactWatch(this.bulletPos.clone(), 0.4);
-      }
-
-      _updateBulletMode(dt) {
-        const stats = this._getComputedStats();
-
-        const wantsSlowMo = Boolean(this.mouseDownRight || this.keys['Space'] || this.mobileSlowMo);
-        if (wantsSlowMo && this.focusEnergy > 1) {
-          this.isBulletSlowMo = true;
-          const drainRate = 100 / stats.focusDuration;
-          this.focusEnergy = Math.max(0, this.focusEnergy - drainRate * dt);
+      _updateHydrationUI() {
+        const timeEl = document.getElementById('hud-hydration-time');
+        const barEl = document.getElementById('hud-hydration-bar');
+        if (!timeEl || !barEl) return;
+        const secs = Math.ceil(this.hydrationRemaining);
+        const mins = Math.floor(secs / 60);
+        const rem = secs % 60;
+        timeEl.textContent = `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+        const pct = Math.max(0, Math.min(100, (this.hydrationRemaining / Math.max(1, this.hydrationMax)) * 100));
+        barEl.style.width = `${pct}%`;
+        if (secs <= 30) {
+          timeEl.className = 'text-rose-400 font-extrabold animate-pulse';
+          barEl.className = 'h-full bg-gradient-to-r from-rose-500 to-orange-500 transition-all duration-150';
         } else {
-          this.isBulletSlowMo = false;
-          this.focusEnergy = Math.min(100, this.focusEnergy + stats.focusRecharge * dt);
-        }
-
-        this.isBulletBoost = Boolean(!this.isBulletSlowMo && (this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.mobileBoost));
-
-        const turnAgility = (this.isBulletSlowMo ? 2.25 : 1.6) * stats.turnMultiplier;
-
-        let kYaw = -this.mobileMoveX;
-        let kPitch = -this.mobileMoveZ * 0.85;
-        if (this.keys['KeyA'] || this.keys['ArrowLeft']) kYaw += 1;
-        if (this.keys['KeyD'] || this.keys['ArrowRight']) kYaw -= 1;
-        if (this.keys['KeyW'] || this.keys['ArrowUp']) kPitch += 0.85;
-        if (this.keys['KeyS'] || this.keys['ArrowDown']) kPitch -= 0.85;
-
-        this.targetBulletYaw += kYaw * turnAgility * 1.45 * dt;
-        this.targetBulletPitch += kPitch * turnAgility * 1.25 * dt;
-        this.targetBulletPitch = Math.max(-1.05, Math.min(1.05, this.targetBulletPitch));
-
-        const steerSmooth = 1 - Math.exp(-15 * dt);
-        const prevYaw = this.bulletYaw;
-        this.bulletYaw += (this.targetBulletYaw - this.bulletYaw) * steerSmooth;
-        this.bulletPitch += (this.targetBulletPitch - this.bulletPitch) * steerSmooth;
-
-        const targetSpeed = this.isBulletSlowMo
-          ? stats.cruiseSpeed * 0.45
-          : this.isBulletBoost
-          ? stats.boostSpeed
-          : stats.cruiseSpeed;
-        const speedSmooth = 1 - Math.exp(-8 * dt);
-        this.bulletSpeed += (targetSpeed - this.bulletSpeed) * speedSmooth;
-
-        const fuelDrainPerSec = 100 / stats.fuelDuration;
-        const fuelCost = (this.isBulletBoost ? 1.55 : this.isBulletSlowMo ? 0.45 : 1.0) * fuelDrainPerSec * dt;
-        this.bulletFuel = Math.max(0, this.bulletFuel - fuelCost);
-        if (this.bulletFuel <= 0) {
-          this.detonateBulletEarly();
-          return;
-        }
-
-        const forward = this._getBulletForward();
-        const stepDist = this.bulletSpeed * dt;
-        const subSteps = 3;
-        const subDist = stepDist / subSteps;
-
-        for (let s = 0; s < subSteps; s++) {
-          this.bulletPos.addScaledVector(forward, subDist);
-          if (this._checkBulletCollisions()) {
-            return;
-          }
-        }
-
-        const yawRate = (this.bulletYaw - prevYaw) / Math.max(0.001, dt);
-        this.bulletRoll += 9.5 * dt;
-        this.bulletGroup.position.copy(this.bulletPos);
-        this.bulletGroup.rotation.order = 'YXZ';
-        this.bulletGroup.rotation.y = this.bulletYaw;
-        this.bulletGroup.rotation.x = this.bulletPitch;
-        this.bulletGroup.rotation.z = this.bulletRoll + yawRate * 0.25;
-
-        this.trailPoints.push(this.bulletPos.clone());
-        if (this.trailPoints.length > this.maxTrailSegments) {
-          this.trailPoints.shift();
-        }
-        this._updateTrailMeshes();
-
-        const targetFov = this.isBulletSlowMo ? 58 : this.isBulletBoost ? 82 : 70;
-        this.currentFov += (targetFov - this.currentFov) * (1 - Math.exp(-10 * dt));
-        this.camera.fov = this.currentFov;
-        this.camera.updateProjectionMatrix();
-
-        const camBack = forward.clone().multiplyScalar(-1.32);
-        const camUp = new THREE.Vector3(0, 0.26, 0);
-        const desiredCam = this.bulletPos.clone().add(camBack).add(camUp);
-        const groundFloor = terrainHeight(desiredCam.x, desiredCam.z) + 0.35;
-        if (desiredCam.y < groundFloor) desiredCam.y = groundFloor;
-
-        this.camera.position.lerp(desiredCam, 1 - Math.exp(-26 * dt));
-        this.camera.rotation.y = this.bulletYaw;
-        this.camera.rotation.x = this.bulletPitch - 0.08;
-        this.camera.rotation.z = Math.max(-0.28, Math.min(0.28, yawRate * 0.14));
-
-        const speedRatio = Math.min(1, Math.max(0, (this.bulletSpeed - 6) / 22));
-        this.sound.updateBulletWind(true, speedRatio, this.isBulletSlowMo, dt);
-        this._updateHUD();
-      }
-
-      _getBulletForward() {
-        const dir = new THREE.Vector3(0, 0, -1);
-        dir.applyEuler(new THREE.Euler(this.bulletPitch, this.bulletYaw, 0, 'YXZ'));
-        return dir.normalize();
-      }
-
-      _updateTrailMeshes() {
-        const count = this.trailPoints.length;
-        if (count < 2) return;
-
-        const rAttr = this.bulletTrailRibbon.geometry.attributes.position;
-        const cAttr = this.bulletTrailCore.geometry.attributes.position;
-        const sideVec = new THREE.Vector3();
-        const tangent = new THREE.Vector3();
-        const up = new THREE.Vector3(0, 1, 0);
-
-        for (let i = 0; i < this.maxTrailSegments; i++) {
-          const idx = Math.min(i, count - 1);
-          const pt = this.trailPoints[idx];
-          const nextPt = this.trailPoints[Math.min(idx + 1, count - 1)];
-
-          tangent.subVectors(nextPt, pt);
-          if (tangent.lengthSq() < 0.0001) tangent.set(0, 0, -1);
-          tangent.normalize();
-
-          sideVec.crossVectors(tangent, up).normalize();
-          const taper = (idx / Math.max(1, count - 1)) * 0.075;
-
-          rAttr.setXYZ(i * 2, pt.x - sideVec.x * taper, pt.y - sideVec.y * taper, pt.z - sideVec.z * taper);
-          rAttr.setXYZ(i * 2 + 1, pt.x + sideVec.x * taper, pt.y + sideVec.y * taper, pt.z + sideVec.z * taper);
-          cAttr.setXYZ(i, pt.x, pt.y, pt.z);
-        }
-        rAttr.needsUpdate = true;
-        cAttr.needsUpdate = true;
-      }
-
-      // -----------------------------------------------------------------------
-      // BULLET COLLISION DETECTION (Multiplayer, Soldiers, Animals, Crowd, Terrain)
-      // -----------------------------------------------------------------------
-      _checkBulletCollisions() {
-        const bulletRadius = 0.15;
-        const headWorld = new THREE.Vector3();
-        const isShockwave = this.profile.equippedAmmo === 'SHOCKWAVE';
-
-        // 0. Check Remote Players (MULTIPLAYER PVP)
-        if (this.activeMode === 'MULTIPLAYER') {
-          for (const [uid, rp] of this.mpRemotePlayers.entries()) {
-            if (!rp.alive) continue;
-            rp.parts.head.getWorldPosition(headWorld);
-            const isHeadshot = this.bulletPos.distanceTo(headWorld) <= 0.36 + bulletRadius;
-
-            const base = rp.root.position;
-            const dx = Math.abs(this.bulletPos.x - base.x);
-            const dz = Math.abs(this.bulletPos.z - base.z);
-            const dy = this.bulletPos.y - base.y;
-            const isBodyHit = dx <= 0.42 + bulletRadius && dz <= 0.34 + bulletRadius && dy >= 0 && dy <= 1.75;
-
-            if (isHeadshot || isBodyHit) {
-              this.shotsHit += 1;
-              const dmg = isHeadshot ? 100 : 55;
-              const willEliminate = rp.hp - dmg <= 0;
-              const pts = this._awardCredits(willEliminate ? (isHeadshot ? 1800 : 1200) : 400);
-              if (isHeadshot) this.headshots += 1;
-
-              this.sound.playTargetEliminated(isHeadshot);
-              this._spawnSparks(this.bulletPos, isHeadshot ? 0xfbbf24 : 0x38bdf8, 26, 15);
-              if (willEliminate) {
-                this.mpKills += 1;
-                this._spawnHumanRagdoll(rp, this._getBulletForward(), isHeadshot);
-                this._pushMpKillFeed(`${this.mpCallsign} eliminated ${rp.callsign}${isHeadshot ? ' [HS]' : ''}`);
-                this._triggerCallout(
-                  isHeadshot ? `HEADSHOT ON ${rp.callsign}!` : `ELIMINATED ${rp.callsign}!`,
-                  `+${pts.toLocaleString()} PTS • KILLS: ${this.mpKills}/${this.mpCurrentLobby?.killLimit || 10}`,
-                  'text-amber-300'
-                );
-              } else {
-                this._triggerCallout(
-                  `HIT ${rp.callsign} (-${dmg} HP)`,
-                  `+${pts.toLocaleString()} PTS`,
-                  'text-sky-300'
-                );
-              }
-
-              this._sendMultiplayerHit(uid, dmg, isHeadshot);
-              this._enterImpactWatch(base.clone().add(new THREE.Vector3(0, 1.1, 0)), 0.72);
-              return true;
-            }
-          }
-        }
-
-        // A. Check Armed Enemy Soldiers (COMBAT_OPS)
-        if (this.activeMode === 'COMBAT_OPS') {
-          for (let i = 0; i < this.enemySoldiers.length; i++) {
-            const enemy = this.enemySoldiers[i];
-            if (!enemy.alive) continue;
-
-            enemy.parts.head.getWorldPosition(headWorld);
-            const isHeadshot = this.bulletPos.distanceTo(headWorld) <= 0.32 + bulletRadius;
-
-            const base = enemy.root.position;
-            const dx = Math.abs(this.bulletPos.x - base.x);
-            const dz = Math.abs(this.bulletPos.z - base.z);
-            const dy = this.bulletPos.y - base.y;
-            const isBodyHit = dx <= 0.36 + bulletRadius && dz <= 0.28 + bulletRadius && dy >= 0 && dy <= 1.72;
-
-            if (isHeadshot || isBodyHit) {
-              this.shotsHit += 1;
-              if (isHeadshot) this.headshots += 1;
-              const pts = this._awardCredits(isHeadshot ? 1500 : 1000);
-              this.sound.playTargetEliminated(isHeadshot);
-
-              this._eliminateEnemySoldier(enemy, this._getBulletForward(), isHeadshot);
-              if (isShockwave) {
-                this._triggerShockwaveBlast(this.bulletPos, 3.4);
-              }
-
-              this._triggerCallout(
-                isHeadshot ? 'HEADSHOT ELIMINATION!' : 'HOSTILE NEUTRALIZED',
-                `+${pts.toLocaleString()} CREDITS`,
-                isHeadshot ? 'text-amber-300' : 'text-rose-300'
-              );
-              this._enterImpactWatch(base.clone().add(new THREE.Vector3(0, 1.1, 0)), 0.72);
-              return true;
-            }
-          }
-        }
-
-        // B. Check Crowd Civilians (CROWD_SNIPER)
-        if (this.activeMode === 'CROWD_SNIPER') {
-          for (let i = 0; i < this.civilians.length; i++) {
-            const civ = this.civilians[i];
-            if (!civ.alive) continue;
-
-            civ.parts.head.getWorldPosition(headWorld);
-            const isHeadshot = this.bulletPos.distanceTo(headWorld) <= 0.32 + bulletRadius;
-            const base = civ.root.position;
-            const dx = Math.abs(this.bulletPos.x - base.x);
-            const dz = Math.abs(this.bulletPos.z - base.z);
-            const dy = this.bulletPos.y - base.y;
-            const isBodyHit = dx <= 0.36 + bulletRadius && dz <= 0.28 + bulletRadius && dy >= 0 && dy <= 1.72;
-
-            if (isHeadshot || isBodyHit) {
-              civ.alive = false;
-              this.modeGroup.remove(civ.root);
-              this._spawnHumanRagdoll(civ, this._getBulletForward(), isHeadshot);
-
-              if (civ.isTarget) {
-                this.shotsHit += 1;
-                if (isHeadshot) this.headshots += 1;
-                const pts = this._awardCredits(isHeadshot ? 3000 : 2000);
-                this.sound.playTargetEliminated(isHeadshot);
-                this._enterImpactWatch(base.clone().add(new THREE.Vector3(0, 1.1, 0)), 0.8);
-                setTimeout(() => {
-                  this._finishMission(
-                    true,
-                    'CONTRACT FULFILLED',
-                    'TARGET ELIMINATED',
-                    `Confirmed ${civ.hat.label} & ${civ.jacket.label} in the ${civ.homeZone.label}. Earned +${pts.toLocaleString()} Credits!`
-                  );
-                }, 820);
-              } else {
-                this.sound.playPenaltyBuzz();
-                this._enterImpactWatch(base.clone().add(new THREE.Vector3(0, 1.1, 0)), 0.65);
-                setTimeout(() => {
-                  this._finishMission(
-                    false,
-                    'MISSION COMPROMISED',
-                    'INNOCENT CIVILIAN HIT',
-                    `You shot a civilian (${civ.hat.label}, ${civ.jacket.label}). Listen carefully to the Tactical Radio intel!`
-                  );
-                }, 680);
-              }
-              return true;
-            }
-          }
-        }
-
-        // C. Check Wildlife (Protected Hares vs Huntable Stags & Boars)
-        for (let i = 0; i < this.animals.length; i++) {
-          const anim = this.animals[i];
-          if (!anim.alive) continue;
-          const pos = anim.root.position;
-          const distXZ = Math.hypot(this.bulletPos.x - pos.x, this.bulletPos.z - pos.z);
-          const dy = this.bulletPos.y - pos.y;
-
-          if (distXZ <= anim.hitRadius + bulletRadius && dy >= 0 && dy <= anim.hitHeight) {
-            anim.alive = false;
-            this.modeGroup.remove(anim.root);
-            this._spawnSparks(this.bulletPos, anim.species === 'HARE' ? 0xfda4af : 0xf59e0b, 22, 12);
-
-            if (anim.species === 'HARE') {
-              this.sound.playPenaltyBuzz();
-              this.score = Math.max(0, this.score - 500);
-              this._triggerCallout('PROTECTED WILDLIFE HIT!', 'DO NOT SHOOT HARES (-500 PTS)', 'text-rose-400');
-              this._enterImpactWatch(this.bulletPos.clone(), 0.55);
-              return true;
-            }
-
-            this.shotsHit += 1;
-            const pts = this._awardCredits(1200);
-            this.sound.playTargetEliminated(false);
-
-            if (this.activeMode === 'WILDLIFE_HUNT') {
-              if (this.huntQuota[anim.species] > 0) {
-                this.huntQuota[anim.species] -= 1;
-              }
-              this._triggerCallout(
-                anim.species === 'DEER' ? 'STAG DEER HARVESTED' : 'WILD BOAR HARVESTED',
-                `+${pts.toLocaleString()} CREDITS • STAG:${this.huntQuota.DEER} BOAR:${this.huntQuota.BOAR}`,
-                'text-amber-300'
-              );
-              this._updateHUD();
-              if (this.huntQuota.DEER <= 0 && this.huntQuota.BOAR <= 0) {
-                this._enterImpactWatch(this.bulletPos.clone(), 0.7);
-                setTimeout(() => {
-                  this._finishMission(
-                    true,
-                    'HUNT COMPLETED',
-                    'VALLEY QUOTA FILLED',
-                    'All designated Stags and Boars harvested while protecting the valley hares!'
-                  );
-                }, 750);
-                return true;
-              }
-            } else {
-              this._triggerCallout(`${anim.species} TAKEN`, `+${pts.toLocaleString()} CREDITS`, 'text-amber-300');
-            }
-
-            this._enterImpactWatch(this.bulletPos.clone(), 0.55);
-            return true;
-          }
-        }
-
-        // D. Check Ground, Trees, Boulders & Out-of-Bounds
-        const groundY = terrainHeight(this.bulletPos.x, this.bulletPos.z);
-        if (this.bulletPos.y <= groundY + 0.08 || this._pointHitsEnvironment(this.bulletPos, bulletRadius) || this.bulletPos.length() > 140) {
-          this.sound.playSurfaceImpact();
-          this._spawnSparks(this.bulletPos, 0xd6d3d1, 18, 9);
-          if (isShockwave) {
-            this._triggerShockwaveBlast(this.bulletPos, 3.4);
-          }
-          this._enterImpactWatch(this.bulletPos.clone(), 0.42);
-          return true;
-        }
-
-        return false;
-      }
-
-      _pointHitsEnvironment(pt, radius = 0.15) {
-        for (let i = 0; i < this.boulderColliders.length; i++) {
-          const b = this.boulderColliders[i];
-          if (Math.hypot(pt.x - b.x, pt.z - b.z) < b.radius + radius && pt.y < b.y + b.height) {
-            return true;
-          }
-        }
-        for (let i = 0; i < this.treeColliders.length; i++) {
-          const t = this.treeColliders[i];
-          const ty = terrainHeight(t.x, t.z);
-          if (Math.hypot(pt.x - t.x, pt.z - t.z) < t.radius + radius && pt.y < ty + 5.8) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      _triggerShockwaveBlast(center, blastRadius) {
-        this._spawnSparks(center, 0x38bdf8, 34, 18);
-        if (this.activeMode !== 'COMBAT_OPS') return;
-
-        for (let i = 0; i < this.enemySoldiers.length; i++) {
-          const enemy = this.enemySoldiers[i];
-          if (!enemy.alive) continue;
-          const dist = enemy.root.position.distanceTo(center);
-          if (dist <= blastRadius) {
-            const away = enemy.root.position.clone().sub(center).normalize();
-            this._awardCredits(850);
-            this._eliminateEnemySoldier(enemy, away, false);
-          }
+          timeEl.className = 'text-white font-extrabold';
+          barEl.className = 'h-full bg-gradient-to-r from-sky-400 to-cyan-300 transition-all duration-150';
         }
       }
 
@@ -3891,29 +4116,450 @@
           crate.group.rotation.y += 1.4 * dt;
           crate.beacon.scale.setScalar(1 + Math.sin(this.worldTime * 4) * 0.12);
 
-          if (this.state === 'SHOOTER_MODE' && this.ammoRemaining < this.maxAmmo) {
-            const d = Math.hypot(this.playerPos.x - crate.x, this.playerPos.z - crate.z);
-            if (d < 1.65) {
+          if (Math.hypot(this.playerPos.x - crate.x, this.playerPos.z - crate.z) < 1.55) {
+            if (this.ammoRemaining < this.maxAmmo || this.focusEnergy < 100) {
+              this.ammoRemaining = Math.min(this.maxAmmo, this.ammoRemaining + 3);
+              this.focusEnergy = Math.min(100, this.focusEnergy + 40);
               crate.active = false;
               crate.group.visible = false;
               crate.respawnTimer = 18.0;
-              this.ammoRemaining = Math.min(this.maxAmmo, this.ammoRemaining + 3);
               this.sound.playAmmoPickup();
-              this._triggerCallout('AMMO RESUPPLIED', '+3 GUIDED ROUNDS COLLECTED', 'text-emerald-300');
+              this._triggerCallout('AMMO CRATE COLLECTED', '+3 GUIDED ROUNDS • +40% FOCUS', 'text-emerald-300');
               this._updateHUD();
             }
           }
         });
       }
 
-      _isBlockedByWorld(x, z, radius) {
-        for (let i = 0; i < this.treeColliders.length; i++) {
-          const t = this.treeColliders[i];
-          if (Math.hypot(x - t.x, z - t.z) < t.radius + radius) return true;
+      // -----------------------------------------------------------------------
+      // GUIDED BULLET LAUNCH, FLIGHT STEERING & BALLISTIC IMPACT DETECTION
+      // -----------------------------------------------------------------------
+      _updateScopeUI(scoped) {
+        this.isScoped = scoped;
+        if (!scoped) {
+          this.scopeToggle = false;
+          this.mouseDownRight = false;
         }
+      }
+
+      fireBullet() {
+        if (this.state !== 'SHOOTER_MODE') return;
+        if (this.ammoRemaining <= 0) {
+          this._triggerAutomaticResupply();
+          return;
+        }
+
+        this.sound.init();
+        this.sound.playRifleShot();
+
+        this.ammoRemaining -= 1;
+        this.shotsFired += 1;
+        this._updateScopeUI(false);
+        this.playerGroup.visible = true;
+        this.playerGroup.updateMatrixWorld(true);
+
+        const muzzleWorld = new THREE.Vector3();
+        this.muzzleNode.getWorldPosition(muzzleWorld);
+        if (this.isScoped) {
+          muzzleWorld.set(this.playerPos.x, this.playerPos.y + 1.62, this.playerPos.z);
+        }
+
+        this.bulletPos.copy(muzzleWorld);
+        this.bulletYaw = this.shooterYaw;
+        this.bulletPitch = this.shooterPitch;
+        this.targetBulletYaw = this.shooterYaw;
+        this.targetBulletPitch = this.shooterPitch;
+        this.bulletFuel = 100;
+        this.bulletRoll = 0;
+
+        this.trailPoints = [this.bulletPos.clone()];
+        this.bulletGroup.position.copy(this.bulletPos);
+        this.bulletGroup.visible = true;
+        this.bulletTrailRibbon.visible = true;
+        this.bulletTrailCore.visible = true;
+
+        this._spawnSparks(muzzleWorld, 0xfbbf24, 14, 9);
+
+        this.state = 'BULLET_MODE';
+        this._updateMobileControlsVisibility();
+        this._updateHUD();
+      }
+
+      detonateBulletEarly() {
+        if (this.state !== 'BULLET_MODE') return;
+        this._spawnSparks(this.bulletPos, 0xf97316, 16, 10);
+        if (this.profile.equippedAmmo === 'SHOCKWAVE') {
+          this._triggerShockwaveBlast(this.bulletPos);
+        }
+        this._enterImpactWatch(this.bulletPos.clone(), 0.45);
+      }
+
+      _updateBulletMode(dt) {
+        const stats = this._getComputedStats();
+
+        // Keyboard / Virtual Stick steering
+        const steerRate = 1.85 * this.settings.bulletSens * stats.turnMultiplier;
+        let steerX = this.mobileMoveX;
+        let steerY = this.mobileMoveZ;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) steerX -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) steerX += 1;
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) steerY -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) steerY += 1;
+
+        const ySign = this.settings.invertY ? -1 : 1;
+        this.targetBulletYaw -= steerX * steerRate * dt;
+        this.targetBulletPitch -= steerY * steerRate * 0.8 * ySign * dt;
+        this.targetBulletPitch = Math.max(-1.05, Math.min(1.05, this.targetBulletPitch));
+
+        const wantSlow = Boolean(this.keys['Space'] || this.mobileSlowMo);
+        const wantBoost = Boolean(this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.mobileBoost);
+
+        this.isBulletSlowMo = wantSlow && this.focusEnergy > 2;
+        this.isBulletBoost = !this.isBulletSlowMo && wantBoost && this.bulletFuel > 5;
+
+        if (this.isBulletSlowMo) {
+          this.focusEnergy = Math.max(0, this.focusEnergy - 22 * stats.fuelDrainScale * dt);
+          this.bulletSpeed = stats.cruiseSpeed * 0.42;
+        } else if (this.isBulletBoost) {
+          this.bulletFuel = Math.max(0, this.bulletFuel - 28 * stats.fuelDrainScale * dt);
+          this.bulletSpeed = stats.boostSpeed;
+        } else {
+          this.bulletSpeed = stats.cruiseSpeed;
+        }
+
+        const drainRate = (this.isBulletSlowMo ? 6.5 : 13.5) * stats.fuelDrainScale;
+        this.bulletFuel = Math.max(0, this.bulletFuel - drainRate * dt);
+
+        const turnAlpha = 1 - Math.exp(-12 * stats.turnMultiplier * dt);
+        this.bulletYaw += (this.targetBulletYaw - this.bulletYaw) * turnAlpha;
+        this.bulletPitch += (this.targetBulletPitch - this.bulletPitch) * turnAlpha;
+
+        const forward = new THREE.Vector3(0, 0, -1).applyEuler(
+          new THREE.Euler(this.bulletPitch, this.bulletYaw, 0, 'YXZ')
+        );
+
+        const prevPos = this.bulletPos.clone();
+        const stepDist = this.bulletSpeed * dt;
+        const subSteps = Math.max(1, Math.ceil(stepDist / 0.35));
+        const subStepVec = forward.clone().multiplyScalar(stepDist / subSteps);
+
+        for (let s = 0; s < subSteps; s++) {
+          this.bulletPos.add(subStepVec);
+          if (this._checkBulletCollisions(forward)) {
+            this.sound.updateBulletWind(false, 0, false, dt);
+            return;
+          }
+        }
+
+        // Update Bullet Mesh & Camera Chase
+        this.bulletRoll += 16 * dt;
+        this.bulletGroup.position.copy(this.bulletPos);
+        this.bulletGroup.rotation.order = 'YXZ';
+        this.bulletGroup.rotation.y = this.bulletYaw;
+        this.bulletGroup.rotation.x = this.bulletPitch;
+        this.bulletGroup.rotation.z = this.bulletRoll;
+
+        const chaseOffset = new THREE.Vector3(0, 0.24, 1.35).applyEuler(
+          new THREE.Euler(this.bulletPitch, this.bulletYaw, 0, 'YXZ')
+        );
+        const desiredCam = this.bulletPos.clone().add(chaseOffset);
+        const minCamY = terrainHeight(desiredCam.x, desiredCam.z, this.activeMap) + 0.35;
+        if (desiredCam.y < minCamY) desiredCam.y = minCamY;
+        this.camera.position.lerp(desiredCam, 1 - Math.exp(-26 * dt));
+        this.camera.rotation.y = this.bulletYaw;
+        this.camera.rotation.x = this.bulletPitch - 0.05;
+        this.camera.rotation.z = (this.targetBulletYaw - this.bulletYaw) * -0.45;
+
+        const targetFov = this.isBulletBoost ? 78 : this.isBulletSlowMo ? 54 : 66;
+        this.currentFov += (targetFov - this.currentFov) * (1 - Math.exp(-12 * dt));
+        this.camera.fov = this.currentFov;
+        this.camera.updateProjectionMatrix();
+
+        // Update Trail Points
+        if (this.trailPoints.length === 0 || this.bulletPos.distanceTo(this.trailPoints[this.trailPoints.length - 1]) > 0.25) {
+          this.trailPoints.push(this.bulletPos.clone());
+          if (this.trailPoints.length > this.maxTrailSegments) {
+            this.trailPoints.shift();
+          }
+        }
+        this._updateTrailMeshes();
+
+        const speedRatio = Math.min(1, this.bulletSpeed / Math.max(1, stats.boostSpeed));
+        this.sound.updateBulletWind(true, speedRatio, this.isBulletSlowMo, dt);
+        this._updateHUD();
+
+        if (this.bulletFuel <= 0 || Math.hypot(this.bulletPos.x, this.bulletPos.z) > 135) {
+          this._spawnSparks(this.bulletPos, 0x94a3b8, 12, 8);
+          this._enterImpactWatch(this.bulletPos.clone(), 0.45);
+        }
+      }
+
+      _updateTrailMeshes() {
+        const n = this.trailPoints.length;
+        if (n < 2) {
+          this.bulletTrailRibbon.geometry.setDrawRange(0, 0);
+          this.bulletTrailCore.geometry.setDrawRange(0, 0);
+          return;
+        }
+
+        const ribPos = this.bulletTrailRibbon.geometry.attributes.position.array;
+        const corePos = this.bulletTrailCore.geometry.attributes.position.array;
+        const sideVec = new THREE.Vector3(Math.cos(this.bulletYaw), 0, -Math.sin(this.bulletYaw));
+
+        for (let i = 0; i < n; i++) {
+          const pt = this.trailPoints[i];
+          const t = i / (n - 1);
+          const halfWidth = 0.015 + t * 0.085;
+
+          corePos[i * 3] = pt.x;
+          corePos[i * 3 + 1] = pt.y;
+          corePos[i * 3 + 2] = pt.z;
+
+          const base = i * 6;
+          ribPos[base] = pt.x - sideVec.x * halfWidth;
+          ribPos[base + 1] = pt.y;
+          ribPos[base + 2] = pt.z - sideVec.z * halfWidth;
+          ribPos[base + 3] = pt.x + sideVec.x * halfWidth;
+          ribPos[base + 4] = pt.y;
+          ribPos[base + 5] = pt.z + sideVec.z * halfWidth;
+        }
+
+        this.bulletTrailCore.geometry.attributes.position.needsUpdate = true;
+        this.bulletTrailCore.geometry.setDrawRange(0, n);
+
+        this.bulletTrailRibbon.geometry.attributes.position.needsUpdate = true;
+        this.bulletTrailRibbon.geometry.setDrawRange(0, n * 2);
+      }
+
+      _checkBulletCollisions(impactDir) {
+        const bx = this.bulletPos.x;
+        const by = this.bulletPos.y;
+        const bz = this.bulletPos.z;
+
+        // 1. Check Enemy Soldiers (Combat Ops)
+        for (let i = 0; i < this.enemySoldiers.length; i++) {
+          const enemy = this.enemySoldiers[i];
+          if (!enemy.alive) continue;
+          const pos = enemy.root.position;
+          const distXZ = Math.hypot(bx - pos.x, bz - pos.z);
+          const dy = by - pos.y;
+          if (distXZ < 0.56 && dy >= 0 && dy <= 2.15) {
+            const isHeadshot = dy >= 1.62;
+            this.shotsHit += 1;
+            if (isHeadshot) this.headshots += 1;
+            this.sound.playHit(isHeadshot);
+            const pts = this._awardCredits(isHeadshot ? 850 : 500);
+            this._triggerCallout(
+              isHeadshot ? 'HEADSHOT ELIMINATION!' : 'HOSTILE NEUTRALIZED',
+              `+${pts.toLocaleString()} CREDITS`,
+              isHeadshot ? 'text-amber-300' : 'text-rose-400'
+            );
+            if (this.profile.equippedAmmo === 'SHOCKWAVE') {
+              this._triggerShockwaveBlast(this.bulletPos);
+            }
+            this._eliminateEnemySoldier(enemy, impactDir, isHeadshot);
+            this._enterImpactWatch(this.bulletPos.clone(), 0.72);
+            return true;
+          }
+        }
+
+        // 2. Check Civilians (Crowd Sniper)
+        for (let i = 0; i < this.civilians.length; i++) {
+          const civ = this.civilians[i];
+          if (!civ.alive) continue;
+          const pos = civ.root.position;
+          const distXZ = Math.hypot(bx - pos.x, bz - pos.z);
+          const dy = by - pos.y;
+          if (distXZ < 0.54 && dy >= 0 && dy <= 2.15) {
+            const isHeadshot = dy >= 1.62;
+            this.shotsHit += 1;
+            if (isHeadshot) this.headshots += 1;
+            this._eliminateCivilian(civ, impactDir, isHeadshot);
+            this._enterImpactWatch(this.bulletPos.clone(), 0.85);
+            return true;
+          }
+        }
+
+        // 3. Check Wildlife (Wildlife Hunt & Ambient)
+        for (let i = 0; i < this.animals.length; i++) {
+          const anim = this.animals[i];
+          if (!anim.alive) continue;
+          const pos = anim.root.position;
+          const distXZ = Math.hypot(bx - pos.x, bz - pos.z);
+          const dy = by - pos.y;
+          if (distXZ < anim.hitRadius && dy >= -0.1 && dy <= anim.hitHeight) {
+            this.shotsHit += 1;
+            this._eliminateAnimal(anim, impactDir);
+            this._enterImpactWatch(this.bulletPos.clone(), 0.65);
+            return true;
+          }
+        }
+
+        // 4. Check Remote Multiplayer Opponents
+        if (this.activeMode === 'MULTIPLAYER') {
+          for (const [uid, rp] of this.mpRemotePlayers.entries()) {
+            if (!rp.alive) continue;
+            const pos = rp.root.position;
+            const distXZ = Math.hypot(bx - pos.x, bz - pos.z);
+            const dy = by - pos.y;
+            if (distXZ < 0.58 && dy >= 0 && dy <= 2.15) {
+              const isHeadshot = dy >= 1.62;
+              const dmg = isHeadshot ? 150 : 65;
+              this.shotsHit += 1;
+              if (isHeadshot) this.headshots += 1;
+              this.sound.playHit(isHeadshot);
+              this._spawnSparks(this.bulletPos, isHeadshot ? 0xfbbf24 : 0x38bdf8, 24, 14);
+              this._sendMultiplayerHit(uid, dmg, isHeadshot);
+
+              if (rp.hp - dmg <= 0) {
+                this.mpKills += 1;
+                const pts = this._awardCredits(isHeadshot ? 1000 : 650);
+                this._pushMpKillFeed(`${this.mpCallsign} eliminated ${rp.callsign}${isHeadshot ? ' [HS]' : ''}`);
+                this._triggerCallout(
+                  isHeadshot ? `HEADSHOT ON ${rp.callsign}!` : `ELIMINATED ${rp.callsign}!`,
+                  `+${pts.toLocaleString()} CREDITS • ${this.mpKills} KILLS`,
+                  'text-sky-300'
+                );
+                this._publishMultiplayerState();
+              } else {
+                this._triggerCallout(`HIT ${rp.callsign} (-${dmg} HP)`, 'TARGET WOUNDED', 'text-amber-300');
+              }
+
+              this._updateHUD();
+              this._enterImpactWatch(this.bulletPos.clone(), 0.65);
+              return true;
+            }
+          }
+        }
+
+        // 5. Check Terrain & Buildings / Rocks / Trees
+        const groundY = terrainHeight(bx, bz, this.activeMap);
+        if (by <= groundY + 0.06 || this._pointHitsEnvironment(this.bulletPos, 0.08)) {
+          this._spawnSparks(this.bulletPos, 0xfbbf24, 18, 10);
+          if (this.profile.equippedAmmo === 'SHOCKWAVE') {
+            this._triggerShockwaveBlast(this.bulletPos);
+          }
+          this._enterImpactWatch(this.bulletPos.clone(), 0.5);
+          return true;
+        }
+
+        return false;
+      }
+
+      _triggerShockwaveBlast(center) {
+        this._spawnSparks(center, 0x38bdf8, 36, 18);
+        const radius = 3.4;
+        const upDir = new THREE.Vector3(0, 0.8, -0.4).normalize();
+        this.enemySoldiers.forEach((enemy) => {
+          if (!enemy.alive) return;
+          if (enemy.root.position.distanceTo(center) <= radius) {
+            this.sound.playHit(false);
+            this._awardCredits(450);
+            this._eliminateEnemySoldier(enemy, upDir, false);
+          }
+        });
+      }
+
+      _eliminateCivilian(civ, impactDir, isHeadshot) {
+        civ.alive = false;
+        this.modeGroup.remove(civ.root);
+        this._spawnHumanRagdoll(civ, impactDir, isHeadshot);
+        this._spawnSparks(this.bulletPos, civ.isTarget ? 0x34d399 : 0xef4444, 24, 14);
+
+        if (civ.isTarget) {
+          this.sound.playHit(true);
+          const bonus = this._awardCredits(isHeadshot ? 3500 : 2500);
+          this._updateHUD();
+          setTimeout(() => {
+            this._finishMission(
+              true,
+              'HIGH-VALUE TARGET ELIMINATED',
+              'CONTRACT FULFILLED',
+              `Confirmed target eliminated from sniper overwatch! Reward: +${bonus.toLocaleString()} Credits.`
+            );
+          }, 850);
+        } else {
+          this.sound.playPenaltyBuzz();
+          this.score = Math.max(0, this.score - 500);
+          this._updateHUD();
+          this._triggerCallout(
+            'INNOCENT CIVILIAN HIT!',
+            '-500 SCORE PENALTY • VERIFY RADIO INTEL BEFORE FIRING',
+            'text-rose-400'
+          );
+          this._broadcastRadioClue(this.crowdClueIndex + 1);
+        }
+      }
+
+      _eliminateAnimal(anim, impactDir) {
+        anim.alive = false;
+        this.modeGroup.remove(anim.root);
+        this._spawnSparks(this.bulletPos, anim.species === 'HARE' ? 0xef4444 : 0xfbbf24, 18, 11);
+
+        if (anim.species === 'HARE') {
+          this.sound.playPenaltyBuzz();
+          this.score = Math.max(0, this.score - 400);
+          this._updateHUD();
+          this._triggerCallout(
+            'PROTECTED HARE HARMED!',
+            '-400 SCORE PENALTY • DO NOT SHOOT HARES',
+            'text-rose-400'
+          );
+          return;
+        }
+
+        this.sound.playHit(false);
+        const pts = this._awardCredits(600);
+        if (this.activeMode === 'WILDLIFE_HUNT') {
+          if (this.huntQuota[anim.species] > 0) {
+            this.huntQuota[anim.species] -= 1;
+          }
+          this._triggerCallout(
+            `${anim.species} HARVESTED`,
+            `+${pts.toLocaleString()} CREDITS • STAGS LEFT: ${this.huntQuota.DEER} | BOARS LEFT: ${this.huntQuota.BOAR}`,
+            'text-amber-300'
+          );
+          this._updateHUD();
+          if (this.huntQuota.DEER === 0 && this.huntQuota.BOAR === 0) {
+            const bonus = this._awardCredits(1800);
+            setTimeout(() => {
+              this._finishMission(
+                true,
+                'HUNT QUOTA COMPLETE',
+                'EXPEDITION SUCCESS',
+                `All 3 Stags & 3 Wild Boars harvested without harming wildlife! Bonus: +${bonus.toLocaleString()} Credits.`
+              );
+            }, 820);
+          }
+        } else {
+          this._triggerCallout(`${anim.species} DOWN`, `+${pts.toLocaleString()} CREDITS`, 'text-amber-300');
+          this._updateHUD();
+        }
+      }
+
+      _pointHitsEnvironment(pt, radius = 0.15) {
         for (let i = 0; i < this.boulderColliders.length; i++) {
           const b = this.boulderColliders[i];
-          if (Math.hypot(x - b.x, z - b.z) < b.radius + radius) return true;
+          if (Math.hypot(pt.x - b.x, pt.z - b.z) < b.radius + radius && pt.y < b.y + b.height) {
+            return true;
+          }
+        }
+        for (let i = 0; i < this.boxColliders.length; i++) {
+          const box = this.boxColliders[i];
+          if (
+            Math.abs(pt.x - box.x) < box.hx + radius &&
+            Math.abs(pt.z - box.z) < box.hz + radius &&
+            pt.y < box.y + box.hy
+          ) {
+            return true;
+          }
+        }
+        for (let i = 0; i < this.treeColliders.length; i++) {
+          const t = this.treeColliders[i];
+          const ty = terrainHeight(t.x, t.z);
+          if (Math.hypot(pt.x - t.x, pt.z - t.z) < t.radius + radius && pt.y < ty + 5.8) {
+            return true;
+          }
         }
         return false;
       }
@@ -3940,19 +4586,35 @@
           clone.rotation.y = baseYaw;
           this.fxGroup.add(clone);
 
-          const speed = (4.5 + Math.random() * 5.5) * p.boost;
-          const vel = impactDir.clone().multiplyScalar(speed);
-          vel.x += (Math.random() - 0.5) * 3.5;
-          vel.y = Math.max(1.8, vel.y + 2.4 + Math.random() * 2.5);
-          vel.z += (Math.random() - 0.5) * 3.5;
+          const vel = impactDir
+            .clone()
+            .multiplyScalar((4.5 + Math.random() * 4.5) * p.boost)
+            .add(new THREE.Vector3((Math.random() - 0.5) * 4, 3.5 + Math.random() * 4 * p.boost, (Math.random() - 0.5) * 4));
 
-          this.ragdolls.push({
-            mesh: clone,
-            vel,
-            rotVel: new THREE.Vector3((Math.random() - 0.5) * 11, (Math.random() - 0.5) * 11, (Math.random() - 0.5) * 11),
-            life: 2.6
-          });
+          const rotVel = new THREE.Vector3(
+            (Math.random() - 0.5) * 14,
+            (Math.random() - 0.5) * 14,
+            (Math.random() - 0.5) * 14
+          );
+
+          this.ragdolls.push({ mesh: clone, vel, rotVel, life: 2.8 });
         });
+      }
+
+      _isBlockedByWorld(x, z, radius) {
+        for (let i = 0; i < this.treeColliders.length; i++) {
+          const t = this.treeColliders[i];
+          if (Math.hypot(x - t.x, z - t.z) < t.radius + radius) return true;
+        }
+        for (let i = 0; i < this.boulderColliders.length; i++) {
+          const b = this.boulderColliders[i];
+          if (Math.hypot(x - b.x, z - b.z) < b.radius + radius) return true;
+        }
+        for (let i = 0; i < this.boxColliders.length; i++) {
+          const box = this.boxColliders[i];
+          if (Math.abs(x - box.x) < box.hx + radius && Math.abs(z - box.z) < box.hz + radius) return true;
+        }
+        return false;
       }
 
       _spawnSparks(origin, colorHex, count, speedScale) {
@@ -4038,15 +4700,16 @@
         const objTitle = document.getElementById('hud-objective-title');
         const quotaLabel = document.getElementById('hud-quota-label');
         const quotaDisplay = document.getElementById('hud-quota-display');
+        const envSuffix = `${this.activeMap} • ${this.activeSeason}`;
 
         if (this.activeMode === 'COMBAT_OPS') {
-          modeTag.textContent = `COMBAT OPS // WAVE ${this.combatWave}/${this.combatMaxWaves}`;
+          modeTag.textContent = `COMBAT W${this.combatWave}/${this.combatMaxWaves} // ${envSuffix}`;
           objTitle.textContent = 'NEUTRALIZE ARMED SQUAD';
           quotaLabel.textContent = 'HOSTILES LEFT';
           const alive = this.enemySoldiers.filter((e) => e.alive).length;
           quotaDisplay.innerHTML = `<span class="text-rose-400">${alive} ARMED SOLDIERS</span>`;
         } else if (this.activeMode === 'WILDLIFE_HUNT') {
-          modeTag.textContent = 'WILDLIFE HUNT // VALLEY';
+          modeTag.textContent = `HUNT // ${envSuffix}`;
           objTitle.textContent = 'HUNT STAGS & BOARS (SPARE HARES)';
           quotaLabel.textContent = 'REMAINING';
           quotaDisplay.innerHTML = `
@@ -4057,15 +4720,25 @@
           const lobbyName = this.mpCurrentLobby ? this.mpCurrentLobby.name.toUpperCase() : 'PVP LOBBY';
           const goal = this.mpCurrentLobby ? this.mpCurrentLobby.killLimit : 10;
           const onlineCount = 1 + this.mpRemotePlayers.size;
-          modeTag.textContent = `PVP // ${lobbyName}`;
+          modeTag.textContent = `PVP // ${lobbyName} (${envSuffix})`;
           objTitle.textContent = `FIRST TO ${goal} KILLS (${onlineCount} IN LOBBY)`;
           quotaLabel.textContent = 'YOUR K / D';
           quotaDisplay.innerHTML = `<span class="text-sky-300">${this.mpKills} K / ${this.mpDeaths} D</span>`;
         } else {
-          modeTag.textContent = 'CROWD SNIPER // RECON';
-          objTitle.textContent = 'IDENTIFY TARGET VIA RADIO INTEL';
+          const vantage =
+            this.activeMap === 'CITY'
+              ? 'ROOFTOP PERCH'
+              : this.activeMap === 'TOWN'
+              ? 'WATCHTOWER NEST'
+              : 'HIDDEN BURROW';
+          modeTag.textContent = `SNIPER // ${envSuffix}`;
+          objTitle.textContent = `${vantage} (POSITION LOCKED)`;
           quotaLabel.textContent = 'CROWD SIZE';
           quotaDisplay.innerHTML = `<span class="text-emerald-300">1 TARGET / 24 PEOPLE</span>`;
+        }
+
+        if (this.activeSeason === 'SUMMER') {
+          this._updateHydrationUI();
         }
 
         document.getElementById('hud-score').textContent = this.score.toLocaleString();
@@ -4234,9 +4907,10 @@
         if (this.state === 'SHOOTER_MODE') {
           const scopeScale = this.isScoped ? 0.36 : 1.0;
           const sens = 0.0023 * this.settings.aimSens * scopeScale;
+          const minPitch = this.activeMode === 'CROWD_SNIPER' ? -0.95 : -0.62;
           this.shooterYaw -= dx * sens;
           this.shooterPitch -= dy * sens * ySign;
-          this.shooterPitch = Math.max(-0.62, Math.min(0.68, this.shooterPitch));
+          this.shooterPitch = Math.max(minPitch, Math.min(0.68, this.shooterPitch));
         } else if (this.state === 'BULLET_MODE') {
           const stats = this._getComputedStats();
           const sens = 0.0025 * this.settings.bulletSens * stats.turnMultiplier;
@@ -4264,6 +4938,48 @@
       }
 
       _bindEvents() {
+        const mapBtns = document.querySelectorAll('.map-btn');
+        const mapDescs = {
+          CLASSIC: 'ROLLING MEADOW',
+          TOWN: 'TIMBER VILLAGE & TOWER',
+          CITY: 'DOWNTOWN SKYSCRAPERS'
+        };
+        mapBtns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            this.selectedMap = btn.dataset.map;
+            this.activeMap = this.selectedMap;
+            mapBtns.forEach((b) => {
+              const active = b.dataset.map === this.selectedMap;
+              b.className = active
+                ? 'map-btn selected font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-amber-500 text-slate-950 border border-amber-300 cursor-pointer transition'
+                : 'map-btn font-mono-tech text-xs font-extrabold py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition';
+            });
+            const descEl = document.getElementById('menu-map-desc');
+            if (descEl) descEl.textContent = mapDescs[this.selectedMap] || '';
+            this._buildEnvironment();
+            this.applyGraphicsSettings();
+          });
+        });
+
+        const seasonBtns = document.querySelectorAll('.season-btn');
+        seasonBtns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            this.selectedSeason = btn.dataset.season;
+            this.activeSeason = this.selectedSeason;
+            const sc = SEASON_CONFIGS[this.selectedSeason] || SEASON_CONFIGS.SPRING;
+            seasonBtns.forEach((b) => {
+              const active = b.dataset.season === this.selectedSeason;
+              b.className = active
+                ? 'season-btn selected font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-emerald-500 text-slate-950 border border-emerald-300 cursor-pointer transition'
+                : 'season-btn font-mono-tech text-[11px] font-extrabold py-2 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 cursor-pointer transition';
+            });
+            const descEl = document.getElementById('menu-season-desc');
+            if (descEl) descEl.textContent = sc.desc;
+            this._buildEnvironment();
+            this.applyGraphicsSettings();
+          });
+        });
+
         const modeCards = document.querySelectorAll('.mode-card');
         const deployBtn = document.getElementById('btn-deploy');
         const modeLabels = {
@@ -4877,7 +5593,7 @@
                 }
               </div>
               <div class="font-mono-tech text-[10px] text-slate-400 mt-1">
-                HOST: <span class="text-slate-200">${this._escapeHtml(lobby.hostName || 'HOST')}</span> &bull; GOAL: ${lobby.killLimit || 10} KILLS
+                HOST: <span class="text-slate-200">${this._escapeHtml(lobby.hostName || 'HOST')}</span> &bull; ${this._escapeHtml(lobby.map || 'CLASSIC')} &bull; ${this._escapeHtml(lobby.season || 'SPRING')}${lobby.season === 'SUMMER' ? ` (${lobby.summerTime || 180}S)` : ''} &bull; ${lobby.killLimit || 10} KILLS
               </div>
             </div>
             <div class="flex items-center gap-2.5 shrink-0">
@@ -4918,6 +5634,9 @@
         const passInp = document.getElementById('mp-create-pass').value.trim();
         const maxPlayers = parseInt(document.getElementById('mp-create-max').value, 10) || 6;
         const killLimit = parseInt(document.getElementById('mp-create-kills').value, 10) || 10;
+        const lobbyMap = document.getElementById('mp-create-map').value || 'CLASSIC';
+        const lobbySeason = document.getElementById('mp-create-season').value || 'SPRING';
+        const summerTime = parseInt(document.getElementById('mp-create-summer-time').value, 10) || 180;
         const lobbyName = nameInp || `${this.mpCallsign}'S LOBBY`;
 
         try {
@@ -4929,6 +5648,9 @@
             hostName: this.mpCallsign,
             maxPlayers,
             killLimit,
+            map: lobbyMap,
+            season: lobbySeason,
+            summerTime,
             status: 'ACTIVE',
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -4941,7 +5663,10 @@
             hostId: this.mpUser.uid,
             hostName: this.mpCallsign,
             maxPlayers,
-            killLimit
+            killLimit,
+            map: lobbyMap,
+            season: lobbySeason,
+            summerTime
           };
           this._startMultiplayerMatch(lobbyObj);
         } catch (err) {
@@ -4981,6 +5706,21 @@
         this.mpCurrentLobby = lobby;
         this.activeMode = 'MULTIPLAYER';
         this.selectedMode = 'MULTIPLAYER';
+        this.activeMap = lobby.map || 'CLASSIC';
+        this.activeSeason = lobby.season || 'SPRING';
+        this.hydrationMax = lobby.summerTime || 180;
+        this.hydrationRemaining = this.hydrationMax;
+
+        // Rebuild world for lobby's Map & Season
+        this._buildEnvironment();
+        this.applyGraphicsSettings();
+
+        const hydrationBox = document.getElementById('hud-hydration-box');
+        if (hydrationBox) {
+          if (this.activeSeason === 'SUMMER') hydrationBox.classList.remove('hidden');
+          else hydrationBox.classList.add('hidden');
+        }
+
         this.mpKills = 0;
         this.mpDeaths = 0;
         this.mpRespawnTimer = 0;
@@ -5067,11 +5807,12 @@
           [22, -12]
         ];
         const [sx, sz] = spawns[Math.floor(Math.random() * spawns.length)];
-        this.playerPos.set(sx, terrainHeight(sx, sz), sz);
+        this.playerPos.set(sx, terrainHeight(sx, sz, this.activeMap), sz);
         this.shooterYaw = Math.atan2(sx, sz);
         this.shooterPitch = -0.02;
         this.playerHP = this.playerMaxHP;
         this.ammoRemaining = this.maxAmmo;
+        this.hydrationRemaining = this.hydrationMax;
         this.playerGroup.position.copy(this.playerPos);
         this.playerGroup.visible = true;
       }
