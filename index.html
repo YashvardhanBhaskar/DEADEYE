@@ -11,10 +11,21 @@
   <!-- Firebase Auth & Firestore Bridge for Multiplayer Lobbies & Cloud Profile -->
   <script type="module">
     import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, setPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, getDocsFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'deadeye-field-ops';
+    // Paste your Firebase Web App config here to enable cross-device play for everyone.
+    // This is public client configuration, not a service account key.
+    const DEPLOYED_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCK3COHSr9L_VVRI3kAk3z-1KIy98avM1A",
+    authDomain: "deadeye-web.firebaseapp.com",
+    projectId: "deadeye-web",
+    storageBucket: "deadeye-web.firebasestorage.app",
+    messagingSenderId: "323413069552",
+    appId: "1:323413069552:web:a086727b5de1c82640bc35",
+    measurementId: "G-3J7K1RCV24"
+    };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'deadeye-field-ops-v3';
     let db = null;
     let auth = null;
     let currentUser = null;
@@ -26,7 +37,7 @@
     const localMeshUid = 'OP-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
 
     // Built-in Cross-Tab / Same-Origin Live Mesh Fallback + Cross-Device Cloud Relay
-    const meshChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('deadeye_mp_mesh_v1') : null;
+    const meshChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('deadeye_mp_mesh_v3') : null;
     const meshState = {
       lobbies: new Map(),
       players: new Map(),
@@ -85,9 +96,13 @@
           if (changedL) notifyMesh('lobbies');
           if (changedP) notifyMesh('players');
         } else if (msg.type === 'SET_DOC') {
+          if (!meshState[msg.col] || !(meshState[msg.col] instanceof Map)) return;
+          const old = meshState[msg.col].get(msg.id);
+          if (old && (old.updatedAt || old.createdAt || 0) > (msg.data.updatedAt || msg.data.createdAt || 0)) return;
           meshState[msg.col].set(msg.id, msg.data);
           notifyMesh(msg.col);
         } else if (msg.type === 'DEL_DOC') {
+          if (!(meshState[msg.col] instanceof Map)) return;
           meshState[msg.col].delete(msg.id);
           notifyMesh(msg.col);
         }
@@ -120,6 +135,7 @@
         const app = initializeApp(cfg);
         db = getFirestore(app);
         auth = getAuth(app);
+        await setPersistence(auth, browserSessionPersistence);
 
         // Rule 3: Always sign in first and await before any Firestore queries
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -128,6 +144,8 @@
           await signInAnonymously(auth);
         }
 
+        // Authentication alone does not prove that Firestore is reachable or permitted.
+        await getDocsFromServer(collection(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies'));
         currentUser = auth.currentUser;
         connectionMode = 'CLOUD';
         initError = null;
@@ -148,8 +166,11 @@
     }
 
     const readyPromise = (async () => {
-      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        return await connectWithConfig(__firebase_config);
+      let savedConfig = null;
+      try { savedConfig = localStorage.getItem('deadeye.firebase.config'); } catch (_) {}
+      const cfg = DEPLOYED_FIREBASE_CONFIG || (typeof __firebase_config !== 'undefined' ? __firebase_config : null) || savedConfig;
+      if (cfg) {
+        return await connectWithConfig(cfg);
       } else {
         activateLocalMeshFallback(null);
         return currentUser;
@@ -247,6 +268,8 @@
       lobbyDoc: (id) => (connectionMode === 'CLOUD' && db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_lobbies', id) : { _meshCol: 'lobbies', _meshId: id }),
       playersCol: () => (connectionMode === 'CLOUD' && db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_players') : { _meshCol: 'players' }),
       playerDoc: (id) => (connectionMode === 'CLOUD' && db ? doc(db, 'artifacts', appId, 'public', 'data', 'mp_players', id) : { _meshCol: 'players', _meshId: id }),
+      roomSecretDoc: (id) => doc(db, 'artifacts', appId, 'public', 'data', 'mp_secrets', id),
+      memberDoc: (id, uid) => doc(db, 'artifacts', appId, 'public', 'data', 'mp_members', `${id}_${uid}`),
       hitsCol: () => (connectionMode === 'CLOUD' && db ? collection(db, 'artifacts', appId, 'public', 'data', 'mp_hits') : { _meshCol: 'hits' }),
       userProfileDoc: (uid) => (connectionMode === 'CLOUD' && db && uid ? doc(db, 'artifacts', appId, 'users', uid, 'profile', 'save_data') : { _meshCol: 'profile', _meshId: 'save_data' }),
       fn: unifiedFn
@@ -969,7 +992,7 @@
           <div id="mp-server-cfg-box" class="hidden pt-3 border-t border-slate-800">
             <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
               <span class="font-mono-tech text-[10px] font-bold text-sky-300">CLOUD SERVER CONFIG JSON (FOR MOBILE + PC ACROSS DIFFERENT DEVICES)</span>
-              <span class="font-mono-tech text-[10px] text-emerald-300">AUTOMATICALLY SYNCED WHEN HOSTED</span>
+              <span class="font-mono-tech text-[10px] text-emerald-300">SAME FIREBASE PROJECT REQUIRED</span>
             </div>
             <div class="flex flex-col sm:flex-row gap-2">
               <input id="mp-server-cfg-input" type="text" placeholder='Paste {"apiKey":"...","authDomain":"...","projectId":"..."}' class="flex-1 bg-slate-950 border border-slate-600 focus:border-sky-400 rounded-lg px-3 py-1.5 font-mono-tech text-[11px] text-white outline-none" />
@@ -1758,6 +1781,12 @@
         this.mpDeaths = 0;
         this.mpRespawnTimer = 0;
         this.mpSyncTimer = 0;
+        this.mpHeartbeatAt = 0;
+        this.mpPublishBusy = false;
+        this.mpPublishPending = false;
+        this.mpJoining = false;
+        this.mpJoinedAt = 0;
+        this.mpLifeId = '';
         this.mpProcessedHitIds = new Set();
         this.mpUnsubLobbies = null;
         this.mpUnsubPlayers = null;
@@ -1838,6 +1867,9 @@
         this.treeColliders = [];
         this.boulderColliders = [];
         this.boxColliders = [];
+        this.environmentCollisionRoots = [];
+        this.spawnFootprints = [];
+        this.environmentRaycaster = new THREE.Raycaster();
         this.clouds = [];
         this.grassMesh = null;
         this.grassData = [];
@@ -2006,7 +2038,7 @@
               const inp = document.getElementById('mp-callsign-input');
               if (inp) inp.value = this.mpCallsign;
             }
-            this._applyUpgradeStats(true);
+            this._applyUpgradeStats(['TITLE','MENU'].includes(this.state));
             this.applyGraphicsSettings();
             this.syncSettingsUI();
             this._refreshCreditsUI();
@@ -2093,6 +2125,9 @@
         this.treeColliders = [];
         this.boulderColliders = [];
         this.boxColliders = [];
+        this.environmentCollisionRoots = [];
+        this.spawnFootprints = [];
+        this.environmentRaycaster = new THREE.Raycaster();
         this.clouds = [];
         this.grassMesh = null;
         this.grassData = [];
@@ -2233,8 +2268,10 @@
         );
         groundMesh.receiveShadow = true;
         this.worldGroup.add(groundMesh);
+        this.groundCollisionMesh = groundMesh;
 
         // 3. Build Map-Specific Landmarks, Buildings & Sniper Perches
+        const obstacleStart = this.worldGroup.children.length;
         if (mapId === 'CLASSIC') {
           this._buildClassicMapFeatures(sc);
         } else if (mapId === 'TOWN') {
@@ -2242,6 +2279,12 @@
         } else if (mapId === 'CITY') {
           this._buildCityMapFeatures(sc);
         }
+
+        this.environmentCollisionRoots = this.worldGroup.children.slice(obstacleStart);
+        this.worldGroup.updateMatrixWorld(true);
+        this.environmentCollisionRoots.forEach(root => {
+          this.spawnFootprints.push(new THREE.Box3().setFromObject(root));
+        });
 
         // 4. Instanced Swaying Grass Blades (Classic, Town & City Park)
         this._buildInstancedGrass(mapId === 'CITY' ? 2800 : mapId === 'TOWN' ? 8500 : 14000, sc, mapId);
@@ -2551,8 +2594,9 @@
           const bar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.15, 0.75), barrierMat);
           bar.position.set(kx, ky + 0.58, kz);
           bar.castShadow = true;
+          bar.userData.destructible = true;
           this.worldGroup.add(bar);
-          this.boxColliders.push({ x: kx, y: ky, z: kz, hx: 1.65, hy: 1.2, hz: 0.42 });
+          this.boxColliders.push({ root: bar, x: kx, y: ky, z: kz, hx: 1.65, hy: 1.2, hz: 0.42 });
         });
 
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
@@ -2805,8 +2849,9 @@
           mesh.rotation.set(idx * 0.4, idx * 1.1, idx * 0.2);
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.userData.destructible = true;
           this.worldGroup.add(mesh);
-          this.boulderColliders.push({
+          this.boulderColliders.push({ root: mesh,
             x: r.x,
             y: ry,
             z: r.z,
@@ -3434,6 +3479,7 @@
       }
 
       openTitleScreen() {
+        if (this.bulletGroup) this._clearProjectileVisuals();
         this._exitPointerLockSafe();
         this._updateScopeUI(false);
         this.sound.updateBulletWind(false, 0, false, 0);
@@ -3450,6 +3496,8 @@
       }
 
       _clearDynamicEntities() {
+        this.matchGeneration = (this.matchGeneration || 0) + 1;
+        if (this.bulletGroup) this._clearProjectileVisuals();
         while (this.modeGroup.children.length > 0) {
           this.modeGroup.remove(this.modeGroup.children[0]);
         }
@@ -3606,7 +3654,9 @@
       }
 
       _finishMission(isVictory, badgeText, titleText, descText) {
+        this._clearProjectileVisuals();
         this.state = 'MISSION_END';
+        if (this.activeMode === 'MULTIPLAYER') this._publishMultiplayerState();
         this._updateMobileControlsVisibility();
         this._exitPointerLockSafe();
         this._updateScopeUI(false);
@@ -3687,8 +3737,7 @@
         specs.forEach((species, idx) => {
           const angle = (idx / Math.max(1, specs.length)) * Math.PI * 2 + Math.random() * 0.5;
           const dist = 12 + Math.random() * 28;
-          const ax = Math.cos(angle) * dist;
-          const az = Math.sin(angle) * dist - 4;
+          const {x:ax,z:az} = this._findOpenSpawn(Math.cos(angle)*dist, Math.sin(angle)*dist-4, 1.1);
           const ay = terrainHeight(ax, az);
 
           const root = new THREE.Group();
@@ -3822,8 +3871,9 @@
             hasRifle: true,
             markerColor: 0xef4444
           });
-          const sy = terrainHeight(sp.x, sp.z);
-          human.root.position.set(sp.x, sy, sp.z);
+          const safe = this._findOpenSpawn(sp.x, sp.z, 1.25);
+          const sy = terrainHeight(safe.x, safe.z);
+          human.root.position.set(safe.x, sy, safe.z);
           this.modeGroup.add(human.root);
 
           this.enemySoldiers.push({
@@ -3867,8 +3917,7 @@
 
           const angle = Math.random() * Math.PI * 2;
           const r = 2 + Math.random() * (zone.radius - 3);
-          const cx = zone.x + Math.cos(angle) * r;
-          const cz = zone.z + Math.sin(angle) * r;
+          const {x:cx,z:cz} = this._findOpenSpawn(zone.x + Math.cos(angle)*r, zone.z + Math.sin(angle)*r, 0.85, zone);
 
           const human = this._buildHumanFigure({
             skinColor: i % 2 === 0 ? 0xe0ac69 : 0x8d5524,
@@ -4084,6 +4133,9 @@
           this._updateAmmoCrates(dt);
         }
 
+        // Multiplayer stays live even when a local menu is open.
+        if (this.activeMode === 'MULTIPLAYER' && this.mpCurrentLobby && this.state !== 'MISSION_END') this._updateMultiplayerSession(dt);
+
         // 5. Mode-specific updates (Enemy AI, Crowd Civilians, Radio Timer, Summer Dehydration, Multiplayer Sync)
         if (this.activeModal !== 'PAUSE' && this.state !== 'TITLE' && this.state !== 'MENU' && this.state !== 'MISSION_END') {
           if (this.activeSeason === 'SUMMER') {
@@ -4100,8 +4152,6 @@
               this.crowdClueTimer = 9.0;
               this._broadcastRadioClue(this.crowdClueIndex + 1);
             }
-          } else if (this.activeMode === 'MULTIPLAYER') {
-            this._updateMultiplayerSession(dt);
           }
         }
 
@@ -4121,6 +4171,8 @@
           fp.pos.y += 1.35 * dt;
           if (fp.life <= 0) this.floatingPopups.splice(i, 1);
         }
+
+        this._updateRagdollsAndParticles(dt);
 
         // 6. State Machine Camera & Control Updates
         if (this.activeModal === 'PAUSE') {
@@ -4159,7 +4211,7 @@
         this.shooterPitch = Math.max(minPitch, Math.min(0.68, this.shooterPitch));
 
         // In CROWD_SNIPER mode, the sniper stays hidden/locked in their perch or burrow and cannot move
-        const isImmobilizedSniper = this.activeMode === 'CROWD_SNIPER';
+        const isImmobilizedSniper = this.activeMode === 'CROWD_SNIPER' || (this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0);
         let moveX = isImmobilizedSniper ? 0 : this.mobileMoveX;
         let moveZ = isImmobilizedSniper ? 0 : this.mobileMoveZ;
         if (!isImmobilizedSniper) {
@@ -4226,7 +4278,7 @@
           const eyePos = new THREE.Vector3(this.playerPos.x, this.playerPos.y + 1.65, this.playerPos.z);
           this.camera.position.lerp(eyePos, camAlpha);
         } else {
-          this.playerGroup.visible = true;
+          this.playerGroup.visible = !(this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0);
           const offset = new THREE.Vector3(0.62, 1.85, 3.05);
           offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.shooterYaw);
           const desiredCam = this.playerPos.clone().add(offset);
@@ -4262,21 +4314,9 @@
       }
 
       _computeLaserDistance(origin, dir, maxDist) {
-        const step = 1.0;
-        const p = origin.clone();
-        for (let d = 1; d <= maxDist; d += step) {
-          p.copy(origin).addScaledVector(dir, d);
-          if (p.y <= terrainHeight(p.x, p.z, this.activeMap) + 0.05) return d;
-          for (let i = 0; i < this.boulderColliders.length; i++) {
-            const b = this.boulderColliders[i];
-            if (Math.hypot(p.x - b.x, p.z - b.z) < b.radius && p.y < b.y + b.height) return d;
-          }
-          for (let i = 0; i < this.boxColliders.length; i++) {
-            const box = this.boxColliders[i];
-            if (Math.abs(p.x - box.x) < box.hx && Math.abs(p.z - box.z) < box.hz && p.y < box.y + box.hy) return d;
-          }
-        }
-        return maxDist;
+        const end = origin.clone().addScaledVector(dir, maxDist);
+        const hit = this._segmentEnvironmentHit(origin, end);
+        return hit ? hit.distance : maxDist;
       }
 
       _updateSummerDehydration(dt) {
@@ -4327,9 +4367,10 @@
       }
 
       _eliminateEnemySoldier(enemy, impactDir, isHeadshot) {
+        if (!enemy.alive) return;
+        const generation = this.matchGeneration;
         enemy.alive = false;
-        this.modeGroup.remove(enemy.root);
-        this._spawnHumanRagdoll(enemy, impactDir, isHeadshot);
+        this._spawnHumanRagdoll(enemy);
         this._spawnSparks(this.bulletPos, isHeadshot ? 0xfbbf24 : 0xef4444, isHeadshot ? 32 : 20, 16);
 
         this._updateHUD();
@@ -4340,7 +4381,7 @@
             const bonus = this._awardCredits(750 * this.combatWave);
             this._spawnAmmoCrate(this.playerPos.x + 2.5, this.playerPos.z - 2.5);
             setTimeout(() => {
-              if (this.activeMode === 'COMBAT_OPS' && this.state !== 'MISSION_END') {
+              if (this.matchGeneration === generation && this.activeMode === 'COMBAT_OPS' && !['MISSION_END','MENU','TITLE'].includes(this.state)) {
                 this._spawnCombatWave(this.combatWave);
                 this._triggerCallout(
                   `WAVE ${this.combatWave} INBOUND`,
@@ -4353,6 +4394,7 @@
           } else {
             const victoryBonus = this._awardCredits(2500);
             setTimeout(() => {
+              if (this.matchGeneration !== generation || ['TITLE','MENU','MISSION_END'].includes(this.state)) return;
               this._finishMission(
                 true,
                 'ALL WAVES CLEARED',
@@ -4364,13 +4406,22 @@
         }
       }
 
-      _enterImpactWatch(focusPoint, duration) {
+      _clearProjectileVisuals() {
         this.bulletGroup.visible = false;
         this.bulletTrailRibbon.visible = false;
         this.bulletTrailCore.visible = false;
+        this.trailPoints.length = 0;
+        this._updateTrailMeshes();
+        this.isBulletSlowMo = false;
+        this.isBulletBoost = false;
+      }
+
+      _enterImpactWatch(focusPoint, duration) {
+        this._clearProjectileVisuals();
         this.impactFocusPoint.copy(focusPoint);
         this.impactWatchTimer = duration;
         this.state = 'IMPACT_WATCH';
+        if (this.activeMode === 'MULTIPLAYER') this._publishMultiplayerState();
         this._updateMobileControlsVisibility();
       }
 
@@ -4394,9 +4445,7 @@
       }
 
       _returnToShooter() {
-        this.bulletGroup.visible = false;
-        this.bulletTrailRibbon.visible = false;
-        this.bulletTrailCore.visible = false;
+        this._clearProjectileVisuals();
         this.playerGroup.visible = true;
         this.isBulletSlowMo = false;
         this.isBulletBoost = false;
@@ -4478,7 +4527,13 @@
         for (let i = this.enemyTracers.length - 1; i >= 0; i--) {
           const tr = this.enemyTracers[i];
           tr.life -= dt;
+          const oldPos = tr.mesh.position.clone();
           tr.mesh.position.addScaledVector(tr.vel, dt);
+          if (this._segmentEnvironmentHit(oldPos, tr.mesh.position)) {
+            this.fxGroup.remove(tr.mesh);
+            this.enemyTracers.splice(i, 1);
+            continue;
+          }
 
           const distToPlayer = Math.hypot(
             tr.mesh.position.x - this.playerPos.x,
@@ -4495,8 +4550,7 @@
 
           if (
             tr.life <= 0 ||
-            tr.mesh.position.y <= terrainHeight(tr.mesh.position.x, tr.mesh.position.z) ||
-            this._pointHitsEnvironment(tr.mesh.position, 0.08)
+            tr.mesh.position.y <= terrainHeight(tr.mesh.position.x, tr.mesh.position.z)
           ) {
             this.fxGroup.remove(tr.mesh);
             this.enemyTracers.splice(i, 1);
@@ -4680,7 +4734,7 @@
       }
 
       fireBullet() {
-        if (this.state !== 'SHOOTER_MODE') return;
+        if (this.state !== 'SHOOTER_MODE' || (this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0)) return;
         if (this.ammoRemaining <= 0) {
           this._triggerAutomaticResupply();
           return;
@@ -4691,13 +4745,14 @@
 
         this.ammoRemaining -= 1;
         this.shotsFired += 1;
+        const wasScoped = this.isScoped;
         this._updateScopeUI(false);
         this.playerGroup.visible = true;
         this.playerGroup.updateMatrixWorld(true);
 
         const muzzleWorld = new THREE.Vector3();
         this.muzzleNode.getWorldPosition(muzzleWorld);
-        if (this.isScoped) {
+        if (wasScoped) {
           muzzleWorld.set(this.playerPos.x, this.playerPos.y + 1.62, this.playerPos.z);
         }
 
@@ -4710,6 +4765,7 @@
         this.bulletRoll = 0;
 
         this.trailPoints = [this.bulletPos.clone()];
+        this._updateTrailMeshes();
         this.bulletGroup.position.copy(this.bulletPos);
         this.bulletGroup.visible = true;
         this.bulletTrailRibbon.visible = true;
@@ -4722,6 +4778,7 @@
         this.cameraShake = Math.max(this.cameraShake, 0.18);
 
         this.state = 'BULLET_MODE';
+        if (this.activeMode === 'MULTIPLAYER') this._publishMultiplayerState();
         this._updateMobileControlsVisibility();
         this._updateHUD();
       }
@@ -4785,7 +4842,18 @@
         const subStepVec = forward.clone().multiplyScalar(stepDist / subSteps);
 
         for (let s = 0; s < subSteps; s++) {
+          const start = this.bulletPos.clone();
           this.bulletPos.add(subStepVec);
+          const worldHit = this._segmentEnvironmentHit(start, this.bulletPos);
+          if (worldHit) {
+            this.bulletPos.copy(worldHit.point);
+            this._clearProjectileVisuals();
+            this._spawnSparks(this.bulletPos, 0xfbbf24, 12, 8);
+            this._removeDestructibleProp(worldHit.object);
+            if (this.profile.equippedAmmo === 'SHOCKWAVE' && this.activeMode !== 'MULTIPLAYER') this._triggerShockwaveBlast(this.bulletPos);
+            this._enterImpactWatch(this.bulletPos.clone(), 0.5);
+            return;
+          }
           if (this._checkBulletCollisions(forward)) {
             this.sound.updateBulletWind(false, 0, false, dt);
             return;
@@ -4968,19 +5036,7 @@
               );
               this._sendMultiplayerHit(uid, dmg, isHeadshot);
 
-              if (rp.hp - dmg <= 0) {
-                this.mpKills += 1;
-                const pts = this._awardCredits(isHeadshot ? 1000 : 650);
-                this._pushMpKillFeed(`${this.mpCallsign} eliminated ${rp.callsign}${isHeadshot ? ' [HS]' : ''}`);
-                this._triggerCallout(
-                  isHeadshot ? `HEADSHOT ON ${rp.callsign}!` : `ELIMINATED ${rp.callsign}!`,
-                  `+${pts.toLocaleString()} CREDITS • ${this.mpKills} KILLS`,
-                  'text-sky-300'
-                );
-                this._publishMultiplayerState();
-              } else {
-                this._triggerCallout(`HIT ${rp.callsign} (-${dmg} HP)`, 'TARGET WOUNDED', 'text-amber-300');
-              }
+              this._triggerCallout(`HIT ${rp.callsign}`, 'AWAITING SERVER SYNC', 'text-amber-300');
 
               this._updateHUD();
               this._enterImpactWatch(this.bulletPos.clone(), 0.65);
@@ -4989,16 +5045,6 @@
           }
         }
 
-        // 5. Check Terrain & Buildings / Rocks / Trees
-        const groundY = terrainHeight(bx, bz, this.activeMap);
-        if (by <= groundY + 0.06 || this._pointHitsEnvironment(this.bulletPos, 0.08)) {
-          this._spawnSparks(this.bulletPos, 0xfbbf24, 18, 10);
-          if (this.profile.equippedAmmo === 'SHOCKWAVE') {
-            this._triggerShockwaveBlast(this.bulletPos);
-          }
-          this._enterImpactWatch(this.bulletPos.clone(), 0.5);
-          return true;
-        }
 
         return false;
       }
@@ -5018,9 +5064,10 @@
       }
 
       _eliminateCivilian(civ, impactDir, isHeadshot) {
+        if (!civ.alive) return;
+        const generation = this.matchGeneration;
         civ.alive = false;
-        this.modeGroup.remove(civ.root);
-        this._spawnHumanRagdoll(civ, impactDir, isHeadshot);
+        this._spawnHumanRagdoll(civ);
         this._spawnSparks(this.bulletPos, civ.isTarget ? 0x34d399 : 0xef4444, 24, 14);
 
         if (civ.isTarget) {
@@ -5029,6 +5076,7 @@
           this._triggerHitFeedback(this.bulletPos, `TARGET DOWN +${bonus}`, '#34d399', true);
           this._updateHUD();
           setTimeout(() => {
+            if (this.matchGeneration !== generation || ['TITLE','MENU','MISSION_END'].includes(this.state)) return;
             this._finishMission(
               true,
               'HIGH-VALUE TARGET ELIMINATED',
@@ -5051,6 +5099,8 @@
       }
 
       _eliminateAnimal(anim, impactDir) {
+        if (!anim.alive) return;
+        const generation = this.matchGeneration;
         anim.alive = false;
         this.modeGroup.remove(anim.root);
         this._spawnSparks(this.bulletPos, anim.species === 'HARE' ? 0xef4444 : 0xfbbf24, 18, 11);
@@ -5084,6 +5134,7 @@
           if (this.huntQuota.DEER === 0 && this.huntQuota.BOAR === 0) {
             const bonus = this._awardCredits(1800);
             setTimeout(() => {
+              if (this.matchGeneration !== generation || ['TITLE','MENU','MISSION_END'].includes(this.state)) return;
               this._finishMission(
                 true,
                 'HUNT QUOTA COMPLETE',
@@ -5098,68 +5149,65 @@
         }
       }
 
-      _pointHitsEnvironment(pt, radius = 0.15) {
-        for (let i = 0; i < this.boulderColliders.length; i++) {
-          const b = this.boulderColliders[i];
-          if (Math.hypot(pt.x - b.x, pt.z - b.z) < b.radius + radius && pt.y < b.y + b.height) {
-            return true;
-          }
-        }
-        for (let i = 0; i < this.boxColliders.length; i++) {
-          const box = this.boxColliders[i];
-          if (
-            Math.abs(pt.x - box.x) < box.hx + radius &&
-            Math.abs(pt.z - box.z) < box.hz + radius &&
-            pt.y < box.y + box.hy
-          ) {
-            return true;
-          }
-        }
-        for (let i = 0; i < this.treeColliders.length; i++) {
-          const t = this.treeColliders[i];
-          const ty = terrainHeight(t.x, t.z);
-          if (Math.hypot(pt.x - t.x, pt.z - t.z) < t.radius + radius && pt.y < ty + 5.8) {
-            return true;
-          }
-        }
-        return false;
+      _segmentEnvironmentHit(start, end) {
+        const delta = end.clone().sub(start);
+        const length = delta.length();
+        if (length < 1e-7) return null;
+        const ray = this.environmentRaycaster;
+        ray.set(start, delta.divideScalar(length));
+        ray.near = 0.0001;
+        ray.far = length;
+        const bounds = new THREE.Box3().setFromPoints([start, end]);
+        const roots = this.environmentCollisionRoots.filter((root, i) => bounds.intersectsBox(this.spawnFootprints[i]));
+        if (this.groundCollisionMesh) roots.push(this.groundCollisionMesh);
+        return ray.intersectObjects(roots, true)[0] || null;
       }
 
-      // -----------------------------------------------------------------------
-      // RAGDOLL & PARTICLE EFFECTS
-      // -----------------------------------------------------------------------
-      _spawnHumanRagdoll(human, impactDir, isHeadshot) {
-        const basePos = human.root.position;
-        const baseYaw = human.root.rotation.y;
-        const pieceSpecs = [
-          { mesh: human.parts.head, local: new THREE.Vector3(0, 1.82, 0), boost: isHeadshot ? 1.8 : 1.0 },
-          { mesh: human.parts.torso, local: new THREE.Vector3(0, 1.32, 0), boost: 1.0 },
-          { mesh: human.parts.leftArm.mesh, local: new THREE.Vector3(-0.32, 1.28, 0), boost: 1.15 },
-          { mesh: human.parts.rightArm.mesh, local: new THREE.Vector3(0.32, 1.28, 0), boost: 1.15 },
-          { mesh: human.parts.leftLeg.mesh, local: new THREE.Vector3(-0.14, 0.46, 0), boost: 0.85 },
-          { mesh: human.parts.rightLeg.mesh, local: new THREE.Vector3(0.14, 0.46, 0), boost: 0.85 }
-        ];
+      _removeDestructibleProp(mesh) {
+        // Permanent landmarks remain in place; removable props are solo-only so room maps stay identical.
+        if (this.activeMode === 'MULTIPLAYER' || !mesh.userData.destructible) return;
+        const idx = this.environmentCollisionRoots.indexOf(mesh);
+        if (idx < 0) return;
+        this.worldGroup.remove(mesh);
+        this.environmentCollisionRoots.splice(idx, 1);
+        this.spawnFootprints.splice(idx, 1);
+        this.boulderColliders = this.boulderColliders.filter(c => c.root !== mesh);
+        this.boxColliders = this.boxColliders.filter(c => c.root !== mesh);
+      }
 
-        pieceSpecs.forEach((p) => {
-          const clone = p.mesh.clone();
-          const worldOffset = p.local.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), baseYaw);
-          clone.position.copy(basePos).add(worldOffset);
-          clone.rotation.y = baseYaw;
-          this.fxGroup.add(clone);
+      _findOpenSpawn(x, z, margin = 1.2, zone = null, avoidPlayer = true) {
+        const allowed = (sx, sz) => {
+          if (Math.abs(sx) > 43 || Math.abs(sz) > 43) return false;
+          if (zone && Math.hypot(sx-zone.x, sz-zone.z) > zone.radius) return false;
+          if (this._isBlockedByWorld(sx, sz, margin)) return false;
+          if (this.spawnFootprints.some(b => sx >= b.min.x-margin && sx <= b.max.x+margin && sz >= b.min.z-margin && sz <= b.max.z+margin)) return false;
+          if (avoidPlayer && Math.hypot(sx-this.playerPos.x, sz-this.playerPos.z) < 3) return false;
+          return ![...this.enemySoldiers, ...this.civilians, ...this.animals].some(e => e.alive && Math.hypot(sx-e.root.position.x, sz-e.root.position.z) < margin+0.6);
+        };
+        for (let radius=0; radius<=18; radius+=0.75) {
+          const count = radius === 0 ? 1 : Math.max(12, Math.ceil(radius*8));
+          for (let i=0; i<count; i++) {
+            const a = i*2*Math.PI/count;
+            const sx = x+Math.cos(a)*radius, sz = z+Math.sin(a)*radius;
+            if (allowed(sx,sz)) return {x:sx,z:sz};
+          }
+        }
+        if (zone) return this._findOpenSpawn(zone.x, zone.z, margin, null, avoidPlayer);
+        for (let sx=-42; sx<=42; sx+=2) for (let sz=-42; sz<=42; sz+=2) {
+          if (allowed(sx,sz)) return {x:sx,z:sz};
+        }
+        throw new Error('No open spawn location found for this map.');
+      }
 
-          const vel = impactDir
-            .clone()
-            .multiplyScalar((4.5 + Math.random() * 4.5) * p.boost)
-            .add(new THREE.Vector3((Math.random() - 0.5) * 4, 3.5 + Math.random() * 4 * p.boost, (Math.random() - 0.5) * 4));
-
-          const rotVel = new THREE.Vector3(
-            (Math.random() - 0.5) * 14,
-            (Math.random() - 0.5) * 14,
-            (Math.random() - 0.5) * 14
-          );
-
-          this.ragdolls.push({ mesh: clone, vel, rotVel, life: 2.8 });
-        });
+      _spawnHumanRagdoll(human) {
+        if (human.falling) return;
+        human.falling = true;
+        if (human.marker) human.marker.visible = false;
+        const root = human.root;
+        // Keep the original articulated model intact; stylized fall, no detached pieces.
+        const yaw = root.rotation.y;
+        root.rotation.order = 'YXZ';
+        this.ragdolls.push({ root, yaw, elapsed: 0, ground: root.position.y, parts: human.parts });
       }
 
       _isBlockedByWorld(x, z, radius) {
@@ -5202,24 +5250,18 @@
       _updateRagdollsAndParticles(dt) {
         for (let i = this.ragdolls.length - 1; i >= 0; i--) {
           const r = this.ragdolls[i];
-          r.life -= dt;
-          r.vel.y -= 17.5 * dt;
-          r.mesh.position.addScaledVector(r.vel, dt);
-          r.mesh.rotation.x += r.rotVel.x * dt;
-          r.mesh.rotation.y += r.rotVel.y * dt;
-          r.mesh.rotation.z += r.rotVel.z * dt;
-
-          const gy = terrainHeight(r.mesh.position.x, r.mesh.position.z) + 0.14;
-          if (r.mesh.position.y < gy) {
-            r.mesh.position.y = gy;
-            r.vel.y *= -0.32;
-            r.vel.x *= 0.65;
-            r.vel.z *= 0.65;
+          r.elapsed += dt;
+          const t = Math.min(1, r.elapsed / 0.65);
+          const ease = t*t*(3-2*t);
+          r.root.rotation.set(-Math.PI*0.5*ease, r.yaw, 0, 'YXZ');
+          r.root.position.y = r.ground + 0.22*ease;
+          if (r.parts) {
+            r.parts.leftArm.pivot.rotation.x *= 1-ease;
+            r.parts.rightArm.pivot.rotation.x *= 1-ease;
+            r.parts.leftLeg.pivot.rotation.x *= 1-ease;
+            r.parts.rightLeg.pivot.rotation.x *= 1-ease;
           }
-          if (r.life <= 0) {
-            this.fxGroup.remove(r.mesh);
-            this.ragdolls.splice(i, 1);
-          }
+          if (t === 1) this.ragdolls.splice(i, 1); // model stays on the map until mode reset
         }
 
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -5637,7 +5679,7 @@
         document.getElementById('btn-pause-restart').addEventListener('click', () => {
           this.closePauseMenu();
           if (this.activeMode === 'MULTIPLAYER' && this.mpCurrentLobby) {
-            this._respawnMultiplayerPlayer();
+            this._triggerCallout('MATCH IN PROGRESS', 'AUTOMATIC RESPAWN ONLY', 'text-sky-300');
           } else {
             this.startMode(this.activeMode);
           }
@@ -5732,7 +5774,9 @@
         });
         document.getElementById('btn-result-primary').addEventListener('click', () => {
           if (this.activeMode === 'MULTIPLAYER' && this.mpCurrentLobby) {
-            this._startMultiplayerMatch(this.mpCurrentLobby);
+            this._leaveMultiplayerLobby();
+            this.openModeSelection();
+            this.openMultiplayerModal();
           } else {
             this.startMode(this.activeMode);
           }
@@ -6046,7 +6090,7 @@
           }
           if (e.code === 'KeyR' && !e.repeat && (this.state === 'SHOOTER_MODE' || this.state === 'BULLET_MODE')) {
             if (this.activeMode === 'MULTIPLAYER' && this.mpCurrentLobby) {
-              this._respawnMultiplayerPlayer();
+              this._triggerCallout('MATCH IN PROGRESS', 'AUTOMATIC RESPAWN ONLY', 'text-sky-300');
             } else {
               this.startMode(this.activeMode);
             }
@@ -6222,7 +6266,7 @@
               const list = [];
               snap.forEach((d) => {
                 const data = d.data();
-                if (data && data.status === 'ACTIVE' && now - (data.updatedAt || 0) < 1000 * 60 * 30) {
+                if (data && data.status === 'ACTIVE' && now - (data.updatedAt || 0) < 60000) {
                   list.push(Object.assign({ id: d.id }, data));
                 }
               });
@@ -6285,7 +6329,7 @@
             badge.textContent = 'CROSS-DEVICE CLOUD CONNECTED';
             badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
           } else if (mode === 'LOCAL_MESH') {
-            badge.textContent = 'LIVE CROSS-PLAY MESH READY';
+            badge.textContent = 'LOCAL TABS ONLY';
             badge.className = 'font-mono-tech text-[10px] font-extrabold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40';
           } else {
             badge.textContent = 'CONNECTING...';
@@ -6302,10 +6346,13 @@
           return;
         }
         this._setMpStatus('Connecting to cloud multiplayer server...', 'sky');
+        this.mpLobbies = [];
+        this.mpAllPlayers = [];
         await bridge.connectWithConfig(raw);
         this._updateMpConnectionBadge();
         this._attachMultiplayerListeners();
         if (bridge.getMode() === 'CLOUD') {
+          try { localStorage.setItem('deadeye.firebase.config', JSON.stringify(JSON.parse(raw))); } catch (_) {}
           this._setMpStatus('Connected to Cloud Server! Cross-device multiplayer is now active.', 'emerald');
           document.getElementById('mp-server-cfg-box').classList.add('hidden');
           await this._loadProfileFromCloud();
@@ -6347,6 +6394,12 @@
         window.addEventListener('beforeunload', () => {
           this._leaveMultiplayerLobby();
         });
+        window.setInterval(() => {
+          if (this.mpCurrentLobby && this.state !== 'MISSION_END' && document.hidden) this._publishMultiplayerState();
+        }, 3000);
+        document.addEventListener('visibilitychange', () => {
+          if (this.mpCurrentLobby && this.state !== 'MISSION_END') this._publishMultiplayerState();
+        });
       }
 
       _setMpStatus(msg, tone = 'sky') {
@@ -6371,7 +6424,7 @@
         this.activeModal = 'MULTIPLAYER';
         this._exitPointerLockSafe();
         this._updateMobileControlsVisibility();
-        this._setMpStatus('');
+        this._setMpStatus(window.mpBridge?.getMode() === 'LOCAL_MESH' ? 'Local mode: same-origin browser tabs only. Configure Firebase for phone/PC play.' : '');
         document.getElementById('mp-join-pass-box').classList.add('hidden');
         document.getElementById('mp-lobby-modal').classList.remove('hidden');
         this._renderMultiplayerLobbies();
@@ -6388,6 +6441,8 @@
         const countEl = document.getElementById('mp-lobby-count');
         if (!container) return;
 
+        this.mpLobbies = this.mpLobbies.filter(l => l.status === 'ACTIVE' && Date.now() - (l.updatedAt || 0) < 60000);
+        this.mpAllPlayers = this.mpAllPlayers.filter(p => Date.now() - (p.updatedAt || 0) < 15000);
         countEl.textContent = `${this.mpLobbies.length} LOBBIES ONLINE`;
 
         if (!this.mpUser) {
@@ -6407,7 +6462,7 @@
           const playersInLobby = this.mpAllPlayers.filter((p) => p.lobbyId === lobby.id);
           const count = playersInLobby.length;
           const maxP = lobby.maxPlayers || 6;
-          const isLocked = Boolean(lobby.password && lobby.password.length > 0);
+          const isLocked = Boolean(lobby.locked || lobby.passwordHash);
           const isFull = count >= maxP;
           const roomCode = lobby.roomCode || lobby.id.slice(-6).toUpperCase();
           const mobileCount = playersInLobby.filter((p) => p.platform === 'MOBILE').length;
@@ -6490,14 +6545,19 @@
         const lobbySeason = document.getElementById('mp-create-season').value || 'SPRING';
         const summerTime = parseInt(document.getElementById('mp-create-summer-time').value, 10) || 180;
         const lobbyName = nameInp || `${this.mpCallsign}'S LOBBY`;
+        if (this.mpJoining) return;
+        this.mpJoining = true;
         const roomCode = this._generateRoomCode();
 
         try {
           const { addDoc } = bridge.fn;
+          const passwordHash = passInp ? await this._hashRoomPassword(roomCode, passInp) : '';
+          const cloud = bridge.getMode() === 'CLOUD';
           const docRef = await addDoc(bridge.lobbiesCol(), {
             name: lobbyName,
             roomCode,
-            password: passInp,
+            locked: Boolean(passwordHash),
+            ...(cloud ? {} : { passwordHash }),
             hostId: this.mpUser.uid,
             hostName: this.mpCallsign,
             hostPlatform: this.platformTag,
@@ -6506,16 +6566,22 @@
             map: lobbyMap,
             season: lobbySeason,
             summerTime,
-            status: 'ACTIVE',
+            status: cloud ? 'CREATING' : 'ACTIVE',
             createdAt: Date.now(),
             updatedAt: Date.now()
           });
 
+          if (cloud) {
+            await bridge.fn.setDoc(bridge.roomSecretDoc(docRef.id), { hostId: this.mpUser.uid, passwordHash });
+            await bridge.fn.setDoc(bridge.memberDoc(docRef.id, this.mpUser.uid), { lobbyId: docRef.id, uid: this.mpUser.uid, proof: '' });
+            await bridge.fn.updateDoc(bridge.lobbyDoc(docRef.id), { status: 'ACTIVE', updatedAt: Date.now() });
+          }
           const lobbyObj = {
             id: docRef.id,
             name: lobbyName,
             roomCode,
-            password: passInp,
+            locked: Boolean(passwordHash),
+            ...(cloud ? {} : { passwordHash }),
             hostId: this.mpUser.uid,
             hostName: this.mpCallsign,
             hostPlatform: this.platformTag,
@@ -6528,11 +6594,21 @@
           this._startMultiplayerMatch(lobbyObj);
         } catch (err) {
           this._setMpStatus(`Failed to create lobby: ${err.message}`, 'rose');
-        }
+        } finally { this.mpJoining = false; }
+      }
+
+      async _hashRoomPassword(code, password) {
+        const bytes = new TextEncoder().encode(`${code}:${password}`);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
       }
 
       _initiateJoinLobby(lobby) {
-        if (lobby.password && lobby.password.length > 0) {
+        if (this.mpJoining || this.mpCurrentLobby) return;
+        if (this.mpAllPlayers.filter(p => p.lobbyId === lobby.id && Date.now() - p.updatedAt < 15000).length >= lobby.maxPlayers) {
+          this._setMpStatus('This lobby is full.', 'rose'); return;
+        }
+        if (lobby.locked || lobby.passwordHash) {
           this.mpPendingJoinLobby = lobby;
           document.getElementById('mp-join-pass-title').textContent = `PASSWORD FOR "${lobby.name.toUpperCase()}"`;
           const inp = document.getElementById('mp-join-pass-input');
@@ -6541,26 +6617,45 @@
           inp.focus();
           return;
         }
-        this._startMultiplayerMatch(lobby);
+        this._joinVerifiedLobby(lobby, '');
       }
 
-      confirmJoinLockedLobby() {
+      async confirmJoinLockedLobby() {
         const lobby = this.mpPendingJoinLobby;
         if (!lobby) return;
         const entered = document.getElementById('mp-join-pass-input').value.trim();
-        if (entered !== lobby.password) {
+        if (this.mpJoining) return;
+        const proof = await this._hashRoomPassword(lobby.roomCode, entered);
+        if (window.mpBridge.getMode() !== 'CLOUD' && proof !== lobby.passwordHash) {
           this.sound.playPenaltyBuzz();
           this._setMpStatus('Incorrect lobby password! Access denied.', 'rose');
           return;
         }
-        document.getElementById('mp-join-pass-box').classList.add('hidden');
-        this.mpPendingJoinLobby = null;
-        this._startMultiplayerMatch(lobby);
+        await this._joinVerifiedLobby(lobby, proof);
+      }
+
+      async _joinVerifiedLobby(lobby, proof) {
+        const bridge = window.mpBridge;
+        if (this.mpJoining || this.mpCurrentLobby || !this.mpUser) return;
+        this.mpJoining = true;
+        try {
+          if (bridge.getMode() === 'CLOUD') {
+            await bridge.fn.setDoc(bridge.memberDoc(lobby.id, this.mpUser.uid), { lobbyId: lobby.id, uid: this.mpUser.uid, proof });
+          }
+          document.getElementById('mp-join-pass-box').classList.add('hidden');
+          this.mpPendingJoinLobby = null;
+          this._startMultiplayerMatch(lobby);
+        } catch (err) {
+          this._setMpStatus(`Could not join: ${err.code === 'permission-denied' ? 'incorrect room password, closed room or missing Firestore rules.' : err.message}`, 'rose');
+        } finally { this.mpJoining = false; }
       }
 
       _startMultiplayerMatch(lobby) {
-        if (!this.mpUser) return;
+        if (!this.mpUser || this.mpCurrentLobby) return;
         this.mpCurrentLobby = lobby;
+        this.mpJoinedAt = Date.now();
+        this.mpHeartbeatAt = 0;
+        this.mpSyncTimer = 0;
         this.activeMode = 'MULTIPLAYER';
         this.selectedMode = 'MULTIPLAYER';
         this.activeMap = lobby.map || 'CLASSIC';
@@ -6614,6 +6709,7 @@
         this._applyUpgradeStats(true);
 
         this._respawnMultiplayerPlayer();
+        this.state = 'SHOOTER_MODE';
 
         const bridge = window.mpBridge;
         if (this.mpUnsubHits) {
@@ -6632,9 +6728,20 @@
                 if (!hit || hit.lobbyId !== this.mpCurrentLobby.id) return;
                 this.mpProcessedHitIds.add(d.id);
 
-                if (Date.now() - (hit.createdAt || 0) > 10000) return;
-
-                if (hit.targetUid === this.mpUser.uid && this.mpRespawnTimer <= 0) {
+                if (Date.now() - (hit.createdAt || 0) > 15000 || hit.createdAt < this.mpJoinedAt - 2000) return;
+                if (hit.kind === 'ack') {
+                  if (hit.targetUid === this.mpUser.uid && this.state !== 'MISSION_END') {
+                    this.mpKills += 1;
+                    const pts = this._awardCredits(650);
+                    this._pushMpKillFeed(`${this.mpCallsign} eliminated ${hit.attackerName || 'RIVAL'}`);
+                    this._triggerCallout('ELIMINATION CONFIRMED', `+${pts} CREDITS • ${this.mpKills} KILLS`, 'text-sky-300');
+                    this._publishMultiplayerState();
+                  }
+                  return;
+                }
+                if (hit.targetUid === this.mpUser.uid && this.mpRespawnTimer <= 0 &&
+                    this.state !== 'MISSION_END' && hit.targetLifeId === this.mpLifeId &&
+                    [65, 150].includes(hit.damage) && hit.attackerUid !== this.mpUser.uid) {
                   this._onMultiplayerDamaged(hit);
                 }
               });
@@ -6656,7 +6763,7 @@
         }
         this._triggerCallout(
           `JOINED: ${lobby.name.toUpperCase()}`,
-          lobby.password ? `LOCKED LOBBY (${lobby.password}) • FIRST TO ${lobby.killLimit} KILLS` : `FIRST TO ${lobby.killLimit} KILLS`,
+          (lobby.locked || lobby.passwordHash) ? `LOCKED LOBBY • FIRST TO ${lobby.killLimit} KILLS` : `FIRST TO ${lobby.killLimit} KILLS`,
           'text-sky-300'
         );
       }
@@ -6670,7 +6777,10 @@
           [-22, -12],
           [22, -12]
         ];
-        const [sx, sz] = spawns[Math.floor(Math.random() * spawns.length)];
+        const [px, pz] = spawns[Math.floor(Math.random() * spawns.length)];
+        const {x: sx, z: sz} = this._findOpenSpawn(px, pz, 1.2, 0, false);
+        this.mpLifeId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+        this.mpRespawnTimer = 0;
         this.playerPos.set(sx, terrainHeight(sx, sz, this.activeMap), sz);
         this.shooterYaw = Math.atan2(sx, sz);
         this.shooterPitch = -0.02;
@@ -6682,24 +6792,28 @@
       }
 
       async _leaveMultiplayerLobby() {
-        if (this.mpUnsubHits) {
-          this.mpUnsubHits();
-          this.mpUnsubHits = null;
-        }
         const bridge = window.mpBridge;
-        if (bridge && this.mpUser && this.mpCurrentLobby) {
-          try {
-            const { deleteDoc } = bridge.fn;
-            const myDocRef = bridge.playerDoc(`${this.mpCurrentLobby.id}_${this.mpUser.uid}`);
-            if (myDocRef) await deleteDoc(myDocRef);
-          } catch (e) {}
-        }
+        const lobby = this.mpCurrentLobby;
+        const uid = this.mpUser?.uid;
+        if (this.mpUnsubHits) this.mpUnsubHits();
+        this.mpUnsubHits = null;
         this.mpCurrentLobby = null;
+        this.mpPublishPending = false;
+        this.mpRemotePlayers.forEach(rp => {
+          this.modeGroup.remove(rp.root);
+          this.modeGroup.remove(rp.bulletMesh);
+        });
         this.mpRemotePlayers.clear();
-        const kf = document.getElementById('mp-killfeed');
-        if (kf) kf.classList.add('hidden');
-        const roomStrip = document.getElementById('hud-mp-room-strip');
-        if (roomStrip) roomStrip.classList.add('hidden');
+        if (this.bulletGroup) this._clearProjectileVisuals();
+        document.getElementById('mp-killfeed')?.classList.add('hidden');
+        document.getElementById('hud-mp-room-strip')?.classList.add('hidden');
+        if (bridge && lobby && uid) {
+          try {
+            await bridge.fn.deleteDoc(bridge.playerDoc(`${lobby.id}_${uid}`));
+            if (lobby.hostId === uid) await bridge.fn.updateDoc(bridge.lobbyDoc(lobby.id), { status: 'CLOSED', updatedAt: Date.now() });
+            if (bridge.getMode() === 'CLOUD') await bridge.fn.deleteDoc(bridge.memberDoc(lobby.id, uid));
+          } catch (e) { console.warn('Leave lobby:', e); }
+        }
       }
 
       _pushMpKillFeed(text) {
@@ -6719,12 +6833,15 @@
           const { addDoc } = bridge.fn;
           await addDoc(bridge.hitsCol(), {
             lobbyId: this.mpCurrentLobby.id,
+            kind: 'hit',
             targetUid,
+            targetLifeId: this.mpRemotePlayers.get(targetUid)?.lifeId || '',
             attackerUid: this.mpUser.uid,
             attackerName: this.mpCallsign,
             damage,
             isHeadshot,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            expiresAt: new Date(Date.now() + 60000)
           });
         } catch (e) {}
       }
@@ -6745,7 +6862,13 @@
         if (this.playerHP <= 0) {
           this.mpDeaths += 1;
           this.mpRespawnTimer = 3.0;
-          if (this.state === 'BULLET_MODE') {
+          const bridge = window.mpBridge;
+          bridge.fn.addDoc(bridge.hitsCol(), {
+            kind: 'ack', lobbyId: this.mpCurrentLobby.id, targetUid: hit.attackerUid,
+            attackerUid: this.mpUser.uid, attackerName: this.mpCallsign,
+            createdAt: Date.now(), expiresAt: new Date(Date.now() + 60000)
+          }).catch(err => this._setMpStatus(`Score sync failed: ${err.message}`, 'rose'));
+          if (this.state === 'BULLET_MODE' || this.state === 'IMPACT_WATCH') {
             this._returnToShooter();
           }
           this._updateScopeUI(false);
@@ -6757,12 +6880,18 @@
             'text-rose-400'
           );
           this._publishMultiplayerState();
+        } else {
+          this._publishMultiplayerState();
         }
       }
 
       async _publishMultiplayerState() {
         const bridge = window.mpBridge;
         if (!bridge || !this.mpUser || !this.mpCurrentLobby) return;
+        if (this.mpPublishBusy) { this.mpPublishPending = true; return; }
+        this.mpPublishBusy = true;
+        const lobby = this.mpCurrentLobby;
+        const uid = this.mpUser.uid;
         try {
           const { setDoc } = bridge.fn;
           const myDocRef = bridge.playerDoc(`${this.mpCurrentLobby.id}_${this.mpUser.uid}`);
@@ -6785,6 +6914,7 @@
             kills: this.mpKills,
             deaths: this.mpDeaths,
             alive: this.playerHP > 0 && this.mpRespawnTimer <= 0,
+            lifeId: this.mpLifeId,
             bulletActive: isBulletFlying,
             bx: Number(this.bulletPos.x.toFixed(2)),
             by: Number(this.bulletPos.y.toFixed(2)),
@@ -6793,7 +6923,16 @@
             bpitch: Number(this.bulletPitch.toFixed(3)),
             updatedAt: Date.now()
           });
-        } catch (e) {}
+          if (this.mpCurrentLobby === lobby && lobby.hostId === uid && Date.now() - this.mpHeartbeatAt > 10000) {
+            this.mpHeartbeatAt = Date.now();
+            await bridge.fn.updateDoc(bridge.lobbyDoc(lobby.id), { updatedAt: Date.now() });
+          }
+          if (this.mpCurrentLobby !== lobby && this.mpCurrentLobby?.id !== lobby.id) await bridge.fn.deleteDoc(myDocRef);
+        } catch (e) { console.warn('Multiplayer sync:', e); }
+        finally {
+          this.mpPublishBusy = false;
+          if (this.mpPublishPending) { this.mpPublishPending = false; this._publishMultiplayerState(); }
+        }
       }
 
       _createRemotePlayerMesh(uid, callsign, platform = 'PC') {
@@ -6934,6 +7073,8 @@
           rp.targetYaw = p.yaw || 0;
           rp.targetPitch = p.pitch || 0;
           rp.isWalking = Boolean(p.isWalking);
+          const wasBulletActive = rp.bulletActive;
+          rp.lifeId = p.lifeId || '';
           rp.alive = p.alive !== false;
           rp.hp = typeof p.hp === 'number' ? p.hp : 100;
           rp.maxHp = typeof p.maxHp === 'number' ? p.maxHp : 100;
@@ -6944,6 +7085,7 @@
           rp.bulletActive = Boolean(p.bulletActive);
           if (rp.bulletActive) {
             rp.bulletTargetPos.set(p.bx || 0, p.by || 0, p.bz || 0);
+            if (!wasBulletActive) rp.bulletMesh.position.copy(rp.bulletTargetPos);
             rp.bulletMesh.rotation.order = 'YXZ';
             rp.bulletMesh.rotation.y = p.byaw || 0;
             rp.bulletMesh.rotation.x = p.bpitch || 0;
@@ -6963,6 +7105,12 @@
       }
 
       _updateMultiplayerSession(dt) {
+        const now = Date.now();
+        if (!this.mpPruneAt || now - this.mpPruneAt > 3000) {
+          this.mpPruneAt = now;
+          this.mpAllPlayers = this.mpAllPlayers.filter(p => now - (p.updatedAt || 0) < 15000);
+          this._syncRemotePlayersFromSnapshot(this.mpAllPlayers);
+        }
         if (this.mpRespawnTimer > 0) {
           this.mpRespawnTimer -= dt;
           if (this.mpRespawnTimer <= 0) {
@@ -6990,7 +7138,7 @@
         });
 
         this.mpSyncTimer -= dt;
-        const interval = this.state === 'BULLET_MODE' || this.walkCycle > 0 ? 0.085 : 0.35;
+        const interval = this.state === 'BULLET_MODE' || this.walkCycle > 0 ? 0.16 : 0.8;
         if (this.mpSyncTimer <= 0) {
           this.mpSyncTimer = interval;
           this._publishMultiplayerState();
