@@ -705,7 +705,7 @@
               Play solo or join friends online. Open Controls for a quick guide to the game.
             </p>
             <div class="flex items-center justify-end gap-2 mt-3 pt-2.5 border-t border-slate-700/80 font-mono-tech text-[10px] text-slate-400">
-              <span>VER 5.0</span>
+              <span>VER 6.0</span>
               <span>&bull;</span>
               <span class="text-emerald-300 font-bold">60 FPS ENGINE</span>
             </div>
@@ -1791,6 +1791,66 @@
     // =========================================================================
     // 4. MAIN GAME ENGINE: DEADEYE // FIELD OPS
     // =========================================================================
+    // Shared visual locomotion. Local forward is -Z, and the knee only flexes backward.
+    function animateStrideLeg(leg, phase, blend, run) {
+      const pivot = leg.pivot || leg;
+      const knee = leg.knee || pivot.userData.knee;
+      const ankle = leg.ankle || pivot.userData.ankle;
+      const len = pivot.userData.segmentLength || 0.42;
+      const t = ((phase / (2 * Math.PI)) % 1 + 1) % 1;
+      const b = Math.max(0, Math.min(1, blend));
+      const r = Math.max(0, Math.min(1, run));
+      const stride = (0.22 + 0.12 * r) * b;
+      const support = 0.60 - 0.10 * r;
+      const swing = t >= support;
+      const u = swing ? (t-support)/(1-support) : t/support;
+      const smooth = u*u*(3-2*u);
+      const fwd = stride * (swing ? 2*smooth-1 : 1-2*u);
+      const lift = swing ? Math.pow(Math.sin(Math.PI*u), 1.4) * (0.13+0.14*r)*b : 0;
+      const reach = 2*len;
+      const stanceDrop = Math.sqrt(Math.max(0.01,reach*reach-stride*stride)) - 0.009*b;
+      const drop = Math.max(0.1,stanceDrop-lift);
+      const distance = Math.min(reach, Math.hypot(fwd,drop));
+      const bend = 2*Math.acos(Math.max(0,Math.min(1,distance/reach)));
+      pivot.rotation.x = Math.atan2(fwd,drop) + bend/2;
+      pivot.rotation.z = 0;
+      pivot.position.y = (pivot.userData.restHipY || 0.88) - (reach-stanceDrop);
+      if (knee) knee.rotation.x = -bend;
+      if (ankle) ankle.rotation.x = -pivot.rotation.x + bend + (swing ? Math.sin(Math.PI*u)*0.09*b : 0);
+    }
+    function animateStrideArm(arm, phase, blend, run) {
+      if (!arm) return;
+      const b = Math.max(0,Math.min(1,blend));
+      const r = Math.max(0,Math.min(1,run));
+      const swing = Math.cos(phase)*(0.38+0.28*r)*b;
+      arm.pivot.rotation.x = -swing;
+      arm.pivot.rotation.z = 0;
+      if (arm.elbow) arm.elbow.rotation.x = 0.08 + (0.22+0.48*r)*b + Math.max(0,-swing)*0.25;
+    }
+    function makeVisualArm(root, x, sleeveMat, handMat) {
+      const pivot = new THREE.Group();
+      pivot.position.set(x,1.52,0);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.26,0.14), sleeveMat);
+      mesh.position.y = -0.13; mesh.castShadow = true; pivot.add(mesh);
+      const elbow = new THREE.Group(); elbow.position.y = -0.26; pivot.add(elbow);
+      const forearm = new THREE.Mesh(new THREE.BoxGeometry(0.115,0.23,0.12), sleeveMat);
+      forearm.position.y = -0.115; forearm.castShadow = true; elbow.add(forearm);
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.105,0.105,0.11), handMat || sleeveMat);
+      hand.position.y = -0.265; hand.castShadow = true; elbow.add(hand);
+      root.add(pivot);
+      return {pivot, mesh, elbow};
+    }
+    function addVisualFoot(pivot,knee,len,shoeMat) {
+      const ankle = new THREE.Group(); ankle.position.y = -len; knee.add(ankle);
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.08,0.28),shoeMat);
+      foot.position.set(0,0,-0.055); foot.castShadow = true; ankle.add(foot);
+      pivot.userData.restHipY = pivot.position.y;
+      pivot.userData.segmentLength = len;
+      pivot.userData.knee = knee;
+      pivot.userData.ankle = ankle;
+      return ankle;
+    }
+
     class DeadeyeFieldOpsGame {
       constructor() {
         this.webglCanvas = document.getElementById('webgl-canvas');
@@ -3081,12 +3141,16 @@
           shin.castShadow = true;
           knee.add(shin);
           p.add(knee);
-          p.userData.knee = knee;
+          addVisualFoot(p,knee,0.43,vestMat);
           this.playerGroup.add(p);
           return p;
         };
         this.playerLeftLeg = makeLeg(-0.14);
         this.playerRightLeg = makeLeg(0.14);
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.22,0.26),pantsMat);
+        pelvis.position.y = 0.98; pelvis.castShadow = true; this.playerGroup.add(pelvis);
+        this.playerWalkArms = [makeVisualArm(this.playerGroup,-0.32,jacketMat,skinMat),makeVisualArm(this.playerGroup,0.32,jacketMat,skinMat)];
+        this.playerWalkArms.forEach(arm => arm.pivot.visible = false);
 
         this.upperBodyPivot = new THREE.Group();
         this.upperBodyPivot.position.set(0.24, 1.48, -0.05);
@@ -3120,6 +3184,7 @@
         scopeLens.rotation.x = Math.PI / 2;
         scopeLens.position.set(-0.08, 0.12, -0.6);
         this.upperBodyPivot.add(scopeLens);
+        this.playerHeldVisuals = [rightArm,leftArm,receiver,barrel,scopeTube,scopeLens];
 
         this.muzzleNode = new THREE.Object3D();
         this.muzzleNode.position.set(-0.08, 0.04, -1.42);
@@ -4115,7 +4180,7 @@
           const isTarget = i === targetIndex;
           const zone = isTarget ? targetZone : mapZones[i % mapZones.length];
           let hat = isTarget ? targetHat : CROWD_HATS[(i * 3) % CROWD_HATS.length];
-          let jacket = isTarget ? targetJacket : CROWD_JACKETS[(i * 5 + 1) % CROWD_JACKETS.length];
+          let jacket = isTarget ? targetJacket : CROWD_JACKETS[Math.floor(Math.random()*CROWD_JACKETS.length)];
 
           if (!isTarget && hat.id === targetHat.id && jacket.id === targetJacket.id && zone.id === targetZone.id) {
             jacket = CROWD_JACKETS[(CROWD_JACKETS.indexOf(jacket) + 1) % CROWD_JACKETS.length];
@@ -4125,10 +4190,15 @@
           const r = 2 + Math.random() * (zone.radius - 3);
           const {x:cx,z:cz} = this._findOpenSpawn(zone.x + Math.cos(angle)*r, zone.z + Math.sin(angle)*r, 0.85, zone);
 
+          // Independent cosmetic variety for every crowd member, unrelated to clues.
+          const pick = array => array[Math.floor(Math.random()*array.length)];
           const human = this._buildHumanFigure({
-            skinColor: i % 2 === 0 ? 0xe0ac69 : 0x8d5524,
+            skinColor: pick([0xf1c6a5,0xe0ac69,0xc68b59,0xa56c43,0x805331,0x60402c]),
             jacketColor: jacket.color,
-            pantsColor: i % 3 === 0 ? 0x1e3a8a : 0x334155,
+            pantsColor: pick([0x1e3a8a,0x334155,0x74634b,0x353027,0x64748b,0x384a39,0xb5aa91,0x232329]),
+            shoeColor: pick([0x222222,0x59412f,0xddd6c9,0x364151]),
+            hairColor: pick([0x2b211b,0x493326,0x796048,0xb69a63,0x6b6863]),
+            casual: true,
             hatType: hat.id,
             hatColor: hat.color,
             hasRifle: false,
@@ -4180,13 +4250,16 @@
         `;
       }
 
-      _buildHumanFigure({ skinColor, jacketColor, pantsColor, hatType, hatColor, hasRifle, markerColor }) {
+      _buildHumanFigure({ skinColor, jacketColor, pantsColor, hatType, hatColor, hasRifle, markerColor, casual = false, shoeColor = 0x27272a, hairColor = 0x302820 }) {
         const root = new THREE.Group();
 
         const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.62 });
         const jacketMat = new THREE.MeshStandardMaterial({ color: jacketColor, roughness: 0.65 });
         const pantsMat = new THREE.MeshStandardMaterial({ color: pantsColor, roughness: 0.78 });
 
+        const shoeMat = new THREE.MeshStandardMaterial({color:shoeColor,roughness:0.88});
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.23,0.26),pantsMat);
+        pelvis.position.y = 0.98; pelvis.castShadow = true; root.add(pelvis);
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.56, 0.28), jacketMat);
         torso.position.y = 1.32;
         torso.castShadow = true;
@@ -4196,6 +4269,20 @@
         head.position.y = 1.82;
         head.castShadow = true;
         root.add(head);
+        if (casual) {
+          const hairMat = new THREE.MeshStandardMaterial({color:hairColor,roughness:0.92});
+          const hair = new THREE.Mesh(new THREE.BoxGeometry(0.255,0.08,0.255),hairMat);
+          hair.position.set(0,1.925,0.012); root.add(hair);
+          const trimMat = new THREE.MeshStandardMaterial({color:new THREE.Color(jacketColor).multiplyScalar(0.64),roughness:0.85});
+          if (Math.random()<0.65) {
+            const hem = new THREE.Mesh(new THREE.BoxGeometry(0.485,0.045,0.285),trimMat);
+            hem.position.y = 1.06; root.add(hem);
+          }
+          if (Math.random()<0.55) {
+            const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.11,0.018),trimMat);
+            pocket.position.set(-0.12,1.39,-0.145); root.add(pocket);
+          }
+        }
 
         if (hatType && hatType !== 'NONE' && hatColor !== null) {
           const hMat = new THREE.MeshStandardMaterial({ color: hatColor, roughness: 0.55 });
@@ -4217,16 +4304,7 @@
           }
         }
 
-        const makeArm = (x) => {
-          const pivot = new THREE.Group();
-          pivot.position.set(x, 1.52, 0);
-          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.54, 0.14), jacketMat);
-          mesh.position.y = -0.24;
-          mesh.castShadow = true;
-          pivot.add(mesh);
-          root.add(pivot);
-          return { pivot, mesh };
-        };
+        const makeArm = x => makeVisualArm(root,x,jacketMat,skinMat);
         const leftArm = makeArm(-0.32);
         const rightArm = makeArm(0.32);
 
@@ -4240,8 +4318,9 @@
           const knee = new THREE.Group(); knee.position.y = -0.42;
           const shin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.42, 0.16), pantsMat);
           shin.position.y = -0.21; shin.castShadow = true; knee.add(shin); pivot.add(knee);
+          const ankle = addVisualFoot(pivot,knee,0.42,shoeMat);
           root.add(pivot);
-          return { pivot, mesh, knee };
+          return { pivot, mesh, knee, ankle };
         };
         const leftLeg = makeLeg(-0.14);
         const rightLeg = makeLeg(0.14);
@@ -4286,6 +4365,10 @@
         const dt = Math.min(0.05, this.clock.getDelta());
         this.worldTime += dt;
         document.getElementById('hud-layer').classList.toggle('hud-flight', this.state === 'BULLET_MODE');
+        if (this.state !== 'SHOOTER_MODE' || this.mpRespawnTimer > 0) {
+          this.playerWalkArms?.forEach(arm => arm.pivot.visible = false);
+          this.playerHeldVisuals?.forEach(mesh => mesh.visible = true);
+        }
 
         this.fpsFrames++;
         this.fpsAccum += dt;
@@ -4506,11 +4589,14 @@
         this.playerGroup.rotation.set(0, this.shooterYaw, 0, 'YXZ');
         this.upperBodyPivot.rotation.x = this.shooterPitch;
 
-        const stride = Math.sin(this.walkPhase) * (0.43 + 0.26*this.runBlend) * this.walkBlend;
-        this.playerLeftLeg.rotation.x = stride;
-        this.playerRightLeg.rotation.x = -stride;
-        this.playerLeftLeg.userData.knee.rotation.x = Math.max(0, -Math.sin(this.walkPhase)) * (0.28 + 0.42*this.runBlend)*this.walkBlend;
-        this.playerRightLeg.userData.knee.rotation.x = Math.max(0, Math.sin(this.walkPhase)) * (0.28 + 0.42*this.runBlend)*this.walkBlend;
+        animateStrideLeg(this.playerRightLeg,this.walkPhase,this.walkBlend,this.runBlend);
+        animateStrideLeg(this.playerLeftLeg,this.walkPhase+Math.PI,this.walkBlend,this.runBlend);
+        const showWalkingArms = this.walkBlend > 0.18 && !this.scopeToggle;
+        this.playerWalkArms[0].pivot.visible = showWalkingArms;
+        this.playerWalkArms[1].pivot.visible = showWalkingArms;
+        this.playerHeldVisuals.forEach(mesh => mesh.visible = !showWalkingArms);
+        animateStrideArm(this.playerWalkArms[0],this.walkPhase+Math.PI,this.walkBlend,this.runBlend);
+        animateStrideArm(this.playerWalkArms[1],this.walkPhase,this.walkBlend,this.runBlend);
         this.upperBodyPivot.position.y = 1.48 + Math.sin(this.walkPhase*2)*0.025*this.walkBlend;
         this.upperBodyPivot.rotation.z = Math.sin(this.walkPhase)*0.035*this.walkBlend;
 
@@ -4793,13 +4879,8 @@
           pos.y = terrainHeight(pos.x, pos.z);
 
           enemy.walkPhase += dt * 7.5;
-          const swing = Math.sin(enemy.walkPhase) * 0.36;
-          enemy.parts.leftLeg.pivot.rotation.x = swing;
-          enemy.parts.rightLeg.pivot.rotation.x = -swing;
-          if (enemy.parts.leftLeg.knee) {
-            enemy.parts.leftLeg.knee.rotation.x = Math.max(0,-Math.sin(enemy.walkPhase))*0.32;
-            enemy.parts.rightLeg.knee.rotation.x = Math.max(0,Math.sin(enemy.walkPhase))*0.32;
-          }
+          animateStrideLeg(enemy.parts.rightLeg,enemy.walkPhase,1,0);
+          animateStrideLeg(enemy.parts.leftLeg,enemy.walkPhase+Math.PI,1,0);
 
           enemy.fireCooldown -= dt;
           if (enemy.fireCooldown <= 0 && dist < 56) {
@@ -4957,7 +5038,8 @@
 
           const nx = pos.x - Math.sin(civ.yaw) * civ.speed * dt;
           const nz = pos.z - Math.cos(civ.yaw) * civ.speed * dt;
-          if (!this._isBlockedByWorld(nx, nz, 0.5)) {
+          const walking = !this._isBlockedByWorld(nx, nz, 0.5);
+          if (walking) {
             pos.x = nx;
             pos.z = nz;
           } else {
@@ -4966,12 +5048,12 @@
           pos.y = terrainHeight(pos.x, pos.z);
           civ.root.rotation.y = civ.yaw;
 
-          civ.walkPhase += dt * 6.5;
-          const swing = Math.sin(civ.walkPhase) * 0.35;
-          civ.parts.leftLeg.pivot.rotation.x = swing;
-          civ.parts.rightLeg.pivot.rotation.x = -swing;
-          civ.parts.leftArm.pivot.rotation.x = -swing * 0.7;
-          civ.parts.rightArm.pivot.rotation.x = swing * 0.7;
+          civ.walkBlend = (civ.walkBlend || 0) + ((walking ? 1 : 0)-(civ.walkBlend || 0))*(1-Math.exp(-10*dt));
+          if (walking) civ.walkPhase += dt * (5.5 + civ.speed*0.65);
+          animateStrideLeg(civ.parts.rightLeg,civ.walkPhase,civ.walkBlend,0);
+          animateStrideLeg(civ.parts.leftLeg,civ.walkPhase+Math.PI,civ.walkBlend,0);
+          animateStrideArm(civ.parts.rightArm,civ.walkPhase,civ.walkBlend,0);
+          animateStrideArm(civ.parts.leftArm,civ.walkPhase+Math.PI,civ.walkBlend,0);
         });
       }
 
@@ -7295,6 +7377,8 @@
         const helmetMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.45 });
         const visorMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 });
 
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.44,0.23,0.28),pantsMat);
+        pelvis.position.y = 0.98; pelvis.castShadow = true; root.add(pelvis);
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.56, 0.3), jacketMat);
         torso.position.y = 1.32;
         torso.castShadow = true;
@@ -7313,15 +7397,7 @@
         visor.position.set(0, 1.83, -0.13);
         root.add(visor);
 
-        const makeArm = (x) => {
-          const pivot = new THREE.Group();
-          pivot.position.set(x, 1.52, 0);
-          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.54, 0.14), jacketMat);
-          mesh.position.y = -0.24;
-          pivot.add(mesh);
-          root.add(pivot);
-          return { pivot, mesh };
-        };
+        const makeArm = x => makeVisualArm(root,x,jacketMat,armorMat);
         const leftArm = makeArm(-0.33);
         const rightArm = makeArm(0.33);
 
@@ -7333,8 +7409,9 @@
           const knee = new THREE.Group(); knee.position.y = -0.42;
           const shin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.42, 0.16), pantsMat);
           shin.position.y = -0.21; shin.castShadow = true; knee.add(shin); pivot.add(knee);
+          const ankle = addVisualFoot(pivot,knee,0.42,armorMat);
           root.add(pivot);
-          return { pivot, mesh, knee };
+          return { pivot, mesh, knee, ankle };
         };
         const leftLeg = makeLeg(-0.14);
         const rightLeg = makeLeg(0.14);
@@ -7484,9 +7561,12 @@
           for (const leg of [parts.leftLeg,parts.rightLeg]) {
             if (!leg) continue;
             const pivot = leg.pivot || leg;
-            pivot.rotation.x = -0.65*kneel*(1-settle);
+            pivot.rotation.x = 0.65*kneel*(1-settle);
+            pivot.position.y = pivot.userData.restHipY || pivot.position.y;
             const knee = leg.knee || pivot.userData.knee;
-            if (knee) knee.rotation.x = 1.35*kneel*(1-settle);
+            if (knee) knee.rotation.x = -1.35*kneel*(1-settle);
+            const ankle = leg.ankle || pivot.userData.ankle;
+            if (ankle) ankle.rotation.x = 0;
           }
           for (const arm of [parts.leftArm,parts.rightArm]) if (arm?.pivot) arm.pivot.rotation.x = 0.25*settle;
         }
@@ -7521,14 +7601,11 @@
             rp.runBlend = (rp.runBlend || 0) + ((rp.isRunning ? 1 : 0) - (rp.runBlend || 0)) * lerpAlpha;
             rp.walkPhase = (rp.walkPhase || 0) + dt * (8 + 5*rp.runBlend);
             rp.reaction = Math.max(0, (rp.reaction || 0) - dt*3.6);
-            const stride = Math.sin(rp.walkPhase) * (0.43+0.26*rp.runBlend) * rp.walkBlend;
             rp.root.rotation.z = Math.sin(rp.reaction*Math.PI) * 0.10;
-            rp.parts.leftLeg.pivot.rotation.x = stride;
-            rp.parts.rightLeg.pivot.rotation.x = -stride;
-            rp.parts.leftLeg.knee.rotation.x = Math.max(0,-Math.sin(rp.walkPhase))*(0.28+0.42*rp.runBlend)*rp.walkBlend;
-            rp.parts.rightLeg.knee.rotation.x = Math.max(0,Math.sin(rp.walkPhase))*(0.28+0.42*rp.runBlend)*rp.walkBlend;
-            rp.parts.leftArm.pivot.rotation.x = -stride * 0.6;
-            rp.parts.rightArm.pivot.rotation.x = stride * 0.6;
+            animateStrideLeg(rp.parts.rightLeg,rp.walkPhase,rp.walkBlend,rp.runBlend);
+            animateStrideLeg(rp.parts.leftLeg,rp.walkPhase+Math.PI,rp.walkBlend,rp.runBlend);
+            animateStrideArm(rp.parts.rightArm,rp.walkPhase,rp.walkBlend,rp.runBlend);
+            animateStrideArm(rp.parts.leftArm,rp.walkPhase+Math.PI,rp.walkBlend,rp.runBlend);
           } else {
             rp.downElapsed = Math.min(1.3, rp.downElapsed + dt);
             this._applyAvatarDownPose(rp.root, rp.targetYaw, rp.downBaseY, rp.downElapsed, rp.parts);
