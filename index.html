@@ -17,13 +17,13 @@
     // Paste your Firebase Web App config here to enable cross-device play for everyone.
     // This is public client configuration, not a service account key.
     const DEPLOYED_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCK3COHSr9L_VVRI3kAk3z-1KIy98avM1A",
-    authDomain: "deadeye-web.firebaseapp.com",
-    projectId: "deadeye-web",
-    storageBucket: "deadeye-web.firebasestorage.app",
-    messagingSenderId: "323413069552",
-    appId: "1:323413069552:web:a086727b5de1c82640bc35",
-    measurementId: "G-3J7K1RCV24"
+      apiKey: "AIzaSyCK3COHSr9L_VVRI3kAk3z-1KIy98avM1A",
+      authDomain: "deadeye-web.firebaseapp.com",
+      projectId: "deadeye-web",
+      storageBucket: "deadeye-web.firebasestorage.app",
+      messagingSenderId: "323413069552",
+      appId: "1:323413069552:web:a086727b5de1c82640bc35",
+      measurementId: "G-3J7K1RCV24"
     };
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'deadeye-field-ops-v3';
     let db = null;
@@ -414,6 +414,42 @@
     .deadeye-hero-title {
       animation: titleGlowPulse 3.6s ease-in-out infinite;
     }
+    /* v3: quiet, beginner-first interface. Expanded HUD keeps legacy tools. */
+    .hud-card { background: rgba(12, 22, 34, .88); border-color: rgba(180, 205, 224, .23); box-shadow: 0 5px 22px rgba(0,0,0,.18); }
+    #title-screen { z-index: 35; background: linear-gradient(90deg,rgba(8,17,27,.94),rgba(8,17,27,.46) 58%,rgba(8,17,27,.1)); }
+    #title-screen .deadeye-hero-title { animation: none; text-shadow: 0 4px 24px #0008; }
+    #title-screen .title-menu-btn { transform: none; }
+    #title-screen .title-menu-btn:hover { border-color:#fbbf24; }
+    #title-screen .title-menu-btn > span:first-child > span { display:none; }
+    #title-screen .title-menu-btn > span:last-child:not(:first-child) { font-size: 10px; }
+    #hud-layer:not(.hud-expanded) .hud-secondary,
+    #hud-layer:not(.hud-expanded) #hud-fps-badge,
+    #hud-layer:not(.hud-expanded) #hud-headshots,
+    #hud-layer:not(.hud-expanded) #controls-hint-bar,
+    #hud-layer:not(.hud-expanded) #btn-open-shop,
+    #hud-layer:not(.hud-expanded) #btn-open-settings,
+    #hud-layer:not(.hud-expanded) #btn-mute,
+    #hud-layer:not(.hud-expanded) #mp-killfeed,
+    #hud-layer:not(.hud-expanded) #hud-ammo-dots { display:none!important; }
+    #hud-layer:not(.hud-expanded) #hud-bottom-bar > :last-child { display:none; }
+    #hud-layer:not(.hud-expanded).hud-flight #hud-bottom-bar > :last-child { display:block; }
+    #hud-layer:not(.hud-expanded) #hud-mode-tag { letter-spacing: .05em; }
+    #hud-layer .hud-card { min-width: 0; }
+    #hud-layer.hud-touch #hud-bottom-bar { padding-bottom: 158px; }
+    @media (max-height: 440px) { #hud-layer.hud-touch #hud-bottom-bar { padding-bottom: 110px; } #hud-layer.hud-touch #hud-bottom-bar > .hud-card { padding: 6px 8px; } }
+    #hud-layer #hud-objective-title { white-space:normal; }
+    #hud-layer:not(.hud-expanded) #hud-bottom-bar > :first-child { min-width: 150px; }
+    #start-screen .mode-card p { line-height:1.4; }
+    #start-screen .mode-card { min-height: 116px; }
+    @media (max-width: 639px) {
+      #hud-layer { padding: 8px; }
+      #hud-layer > div:first-child > .hud-card { padding: 8px; max-width: 58%; }
+      #hud-layer #hud-mode-tag { font-size: 9px; }
+      #hud-layer:not(.hud-touch) #hud-bottom-bar { padding-bottom: 3px; }
+      #hud-layer.hud-flight #hud-bottom-bar > :last-child { min-width: 110px; }
+      #hud-layer.hud-expanded #controls-hint-bar { display:none!important; }
+    }
+    @media (prefers-reduced-motion: reduce) { .title-menu-btn,.mode-card,.mobile-btn { transition:none; } }
   </style>
 </head>
 <body>
@@ -464,7 +500,7 @@
 
         <!-- Top-Right: Credits, Score, Headshots, Shop, Settings & Mode Switch -->
         <div class="hud-card rounded-xl px-3.5 py-2.5 text-right">
-          <div class="flex items-center justify-end gap-3">
+          <div class="flex items-center justify-end gap-3 hud-secondary">
             <div>
               <div class="font-mono-tech text-[9px] tracking-widest text-amber-300/90 uppercase">CREDITS</div>
               <div id="hud-credits" class="font-mono-tech text-sm sm:text-lg font-extrabold text-amber-400 leading-tight">0</div>
@@ -481,7 +517,8 @@
             <button id="btn-open-settings" type="button" title="Graphics & Hardware Settings [O]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 transition cursor-pointer">&#9881; [O]</button>
             <button id="btn-quick-touch" type="button" title="Toggle On-Screen Mobile Buttons" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 transition cursor-pointer">TOUCH</button>
             <button id="btn-mute" type="button" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition cursor-pointer">SFX ON</button>
-            <button id="btn-open-pause" type="button" title="Tactical Pause [P]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 transition cursor-pointer">&#10074;&#10074; [P]</button>
+            <button id="btn-hud-details" type="button" aria-expanded="false" aria-label="Show detailed HUD" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-600 cursor-pointer">DETAILS</button>
+            <button id="btn-open-pause" type="button" title="Tactical Pause [P]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 transition cursor-pointer">PAUSE</button>
           </div>
           <!-- Live Multiplayer Kill Feed -->
           <div id="mp-killfeed" class="hidden mt-2 pt-2 border-t border-slate-700/75 flex flex-col items-end gap-1 text-[10px] font-mono-tech"></div>
@@ -519,7 +556,7 @@
         <div class="hud-card rounded-xl px-3.5 py-2.5 min-w-[190px] sm:min-w-[235px]">
           <div id="hud-health-section" class="mb-2 pb-2 border-b border-slate-700/75">
             <div class="flex items-center justify-between text-[11px] font-mono-tech">
-              <span class="text-emerald-300 font-bold">ARMOR / HP</span>
+              <span class="text-emerald-300 font-bold">HEALTH</span>
               <span id="hud-hp-text" class="text-white font-extrabold">100 / 100</span>
             </div>
             <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden mt-1 border border-slate-700">
@@ -527,11 +564,11 @@
             </div>
           </div>
           <div class="flex items-center justify-between text-[11px] font-mono-tech">
-            <span class="text-slate-300">GUIDED ROUNDS</span>
+            <span class="text-slate-300">AMMO</span>
             <span id="hud-ammo-text" class="text-amber-300 font-bold">6 / 6</span>
           </div>
           <div id="hud-ammo-dots" class="flex items-center gap-1.5 mt-1.5"></div>
-          <div class="flex items-center justify-between text-[10px] font-mono-tech text-slate-400 mt-1.5">
+          <div class="hud-secondary flex items-center justify-between text-[10px] font-mono-tech text-slate-400 mt-1.5">
             <span>AMMO TYPE</span>
             <span id="hud-equipped-ammo" class="text-amber-300 font-bold">STANDARD FMJ</span>
           </div>
@@ -660,12 +697,12 @@
         <div class="hidden md:flex flex-col items-end gap-2.5 text-right">
           <div class="hud-card rounded-2xl p-4 border-white/20 max-w-xs">
             <div class="font-mono-tech text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">BALLISTIC TELEMETRY</div>
-            <div class="text-sm font-bold text-white mt-1">3 Maps &bull; 4 Dynamic Seasons &bull; 4 Modes</div>
+            <div class="text-sm font-bold text-white mt-1">Choose a map, then play</div>
             <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
-              Fire your rifle to enter live bullet-camera flight. Curve rounds around cover, dilate time in Slow-Mo, and duel friends in password-protected lobbies.
+              Play solo or join friends online. Open Controls for a quick guide to the game.
             </p>
             <div class="flex items-center justify-end gap-2 mt-3 pt-2.5 border-t border-slate-700/80 font-mono-tech text-[10px] text-slate-400">
-              <span>VER 2.5 FINAL</span>
+              <span>VER 3.0</span>
               <span>&bull;</span>
               <span class="text-emerald-300 font-bold">60 FPS ENGINE</span>
             </div>
@@ -701,7 +738,7 @@
         </div>
 
         <p class="text-slate-200 text-xs sm:text-sm mt-2 leading-relaxed">
-          Choose your map, season, and mission mode. Fire your rifle to take direct control of the slow, steerable bullet mid-flight—and spend earned points in the Armory Shop!
+          Choose a map, a season and a game mode. Then select Play.
         </p>
 
         <!-- Map & Season Selectors -->
@@ -759,7 +796,7 @@
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">COMBAT OPS</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Engage armed enemy squads that strafe, take cover, and return tracer fire across the map.
+                Solo action · Three rounds.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-rose-300 mt-3 pt-2 border-t border-slate-700/70">
@@ -776,7 +813,7 @@
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">WILDLIFE HUNT</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Track and harvest 3 Stags and 3 Wild Boars roaming the terrain. Do not harm protected hares!
+                Solo exploration · Complete the wildlife quota.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-amber-300 mt-3 pt-2 border-t border-slate-700/70">
@@ -793,7 +830,7 @@
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">CROWD SNIPER</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Locked on your sniper perch, identify and eliminate 1 target in a crowd of 24 using tactical radio clues only.
+                Solo challenge · Follow the radio clues.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-emerald-300 mt-3 pt-2 border-t border-slate-700/70">
@@ -810,7 +847,7 @@
               </div>
               <h3 class="text-sm sm:text-base font-extrabold text-white mt-2">MULTIPLAYER</h3>
               <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                Cross-platform PvP! Mobile and PC players can host or join password-protected lobbies via Room Code.
+                Play with friends · Create or join a room.
               </p>
             </div>
             <div class="font-mono-tech text-[10px] text-sky-300 mt-3 pt-2 border-t border-slate-700/70">
@@ -1951,6 +1988,7 @@
           !this.activeModal &&
           (this.state === 'SHOOTER_MODE' || this.state === 'BULLET_MODE');
 
+        document.getElementById('hud-layer').classList.toggle('hud-touch', enabled && inActivePlay);
         if (!enabled || !inActivePlay) {
           layer.classList.add('hidden');
           this.mobileMoveX = 0;
@@ -2072,7 +2110,7 @@
         this.scene.background = new THREE.Color(0x87ceeb);
         this.scene.fog = new THREE.Fog(0xd8effd, 155, 620);
 
-        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.15, 940);
+        this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.3, 940);
         this.camera.rotation.order = 'YXZ';
 
         this.renderer = new THREE.WebGLRenderer({
@@ -2081,13 +2119,16 @@
           powerPreference: 'high-performance'
         });
         this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.08;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x4d7c0f, 0.78);
+        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x69745d, 0.78);
         this.scene.add(hemiLight);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.17);
         this.scene.add(ambientLight);
 
         this.muzzlePointLight = new THREE.PointLight(0xffaa33, 0, 14);
@@ -2104,7 +2145,9 @@
         this.sunLight.shadow.camera.right = d;
         this.sunLight.shadow.camera.top = d;
         this.sunLight.shadow.camera.bottom = -d;
-        this.sunLight.shadow.bias = -0.0005;
+        this.sunLight.shadow.bias = -0.00015;
+        this.sunLight.shadow.normalBias = 0.035;
+        this.sunLight.shadow.radius = 2;
         this.scene.add(this.sunLight);
 
         this.worldGroup = new THREE.Group();
@@ -2119,9 +2162,14 @@
       // OPEN MAPS (CLASSIC GRASSLAND, TOWN, CITY) & DYNAMIC SEASONS
       // -----------------------------------------------------------------------
       _clearWorldEnvironment() {
-        while (this.worldGroup.children.length > 0) {
-          this.worldGroup.remove(this.worldGroup.children[0]);
-        }
+        const geometries = new Set(), materials = new Set();
+        this.worldGroup.traverse(obj => {
+          if (obj.geometry) geometries.add(obj.geometry);
+          if (obj.material) (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach(m => materials.add(m));
+          if (obj.isInstancedMesh && obj.dispose) obj.dispose();
+        });
+        geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose());
+        while (this.worldGroup.children.length > 0) this.worldGroup.remove(this.worldGroup.children[0]);
         this.treeColliders = [];
         this.boulderColliders = [];
         this.boxColliders = [];
@@ -2149,7 +2197,7 @@
         this.sunLight.intensity = sc.sunIntensity;
 
         // 1. Open Sky Dome
-        const skyGeo = new THREE.SphereGeometry(850, 32, 20);
+        const skyGeo = new THREE.SphereGeometry(380, 48, 24);
         const posAttr = skyGeo.attributes.position;
         const colors = new Float32Array(posAttr.count * 3);
         const cHorizon = new THREE.Color(sc.horizon);
@@ -2159,7 +2207,7 @@
 
         for (let i = 0; i < posAttr.count; i++) {
           const y = posAttr.getY(i);
-          const t = Math.max(0, Math.min(1, y / 620));
+          const t = Math.max(0, Math.min(1, y / 300));
           if (t < 0.35) {
             tmpColor.copy(cHorizon).lerp(cMid, t / 0.35);
           } else {
@@ -2172,8 +2220,10 @@
         skyGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         const skyDome = new THREE.Mesh(
           skyGeo,
-          new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })
+          new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false })
         );
+        skyDome.renderOrder = -10;
+        skyDome.frustumCulled = false;
         this.worldGroup.add(skyDome);
 
         // Glowing Sun Disc & Fluffy Clouds
@@ -2181,7 +2231,7 @@
           new THREE.SphereGeometry(16, 20, 20),
           new THREE.MeshBasicMaterial({ color: sc.sunColor, fog: false })
         );
-        sunDisc.position.set(220, 330, 175);
+        sunDisc.position.set(165, 247.5, 131.25);
         this.worldGroup.add(sunDisc);
 
         const cloudMat = new THREE.MeshLambertMaterial({
@@ -2209,7 +2259,7 @@
 
         // 2. Terrain Mesh (Map-Specific Ground & Season Colors)
         const size = 280;
-        const segs = 96;
+        const segs = 128;
         const groundGeo = new THREE.PlaneGeometry(size, size, segs, segs);
         groundGeo.rotateX(-Math.PI / 2);
         const gPos = groundGeo.attributes.position;
@@ -2227,7 +2277,7 @@
           const vy = terrainHeight(vx, vz, mapId);
           gPos.setY(i, vy);
 
-          const patch = Math.sin(vx * 0.11) * Math.cos(vz * 0.11) * 0.5 + 0.5;
+          const patch = THREE.MathUtils.clamp(0.5 + 0.28*Math.sin(vx*0.11)*Math.cos(vz*0.11) + 0.13*Math.sin(vx*0.47+vz*0.24) + 0.07*Math.cos(vz*0.85-vx*0.29), 0, 1);
           tmpColor.copy(colMeadow).lerp(colLush, patch);
 
           if (mapId === 'CLASSIC') {
@@ -2440,15 +2490,23 @@
           const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.1, 0.2), timberMat);
           door.position.set(0, 1.05, hs.d / 2 + 0.05);
           hg.add(door);
-
+          const trim = new THREE.MeshStandardMaterial({color:0xd7c9ad,roughness:0.85});
+          const pane = new THREE.MeshStandardMaterial({color:0x42576a,roughness:0.35});
+          for (const side of [-1,1]) {
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(1.16,1.28,0.13),trim);
+            frame.position.set(side*hs.w*0.28,hs.h*0.61,hs.d/2+0.08); hg.add(frame);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.92,1.04,0.08),pane);
+            glass.position.set(frame.position.x,frame.position.y,hs.d/2+0.17); hg.add(glass);
+          }
           this.worldGroup.add(hg);
           this.boxColliders.push({
             x: hs.x,
             y: hy,
             z: hs.z,
-            hx: hs.w * 0.52,
+            yaw: hs.rot,
+            hx: hs.w * 0.5,
             hy: hs.h + 1.2,
-            hz: hs.d * 0.52
+            hz: hs.d * 0.5
           });
         });
 
@@ -2704,14 +2762,16 @@
           roughness: sc.snowCap ? 0.45 : 0.2
         });
 
-        const ring = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.7, 0.75, 20), stoneMat);
-        ring.position.y = 0.37;
+        const profile = [[0,0],[3.7,0],[3.7,0.16],[3.4,0.22],[3.4,0.75],[3.05,0.75],[3.05,0.2],[0,0.2]].map(([r,y]) => new THREE.Vector2(r,y));
+        const ring = new THREE.Mesh(new THREE.LatheGeometry(profile, 64), stoneMat);
+        ring.position.y = 0;
         ring.castShadow = true;
         ring.receiveShadow = true;
         fg.add(ring);
 
-        const water = new THREE.Mesh(new THREE.CylinderGeometry(3.05, 3.05, 0.65, 20), waterMat);
-        water.position.y = 0.42;
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(3.045, 3.045, 0.04, 64), waterMat);
+        water.position.y = 0.62;
+        water.receiveShadow = true;
         fg.add(water);
 
         const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 2.2, 12), stoneMat);
@@ -2734,6 +2794,9 @@
         const bladeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
 
         this.grassMesh = new THREE.InstancedMesh(bladeGeo, bladeMat, count);
+        this.grassMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        this.grassMesh.frustumCulled = false;
+        this.grassWindElapsed = 0;
         const dummy = new THREE.Object3D();
         const cTint = new THREE.Color();
         this.grassData = [];
@@ -2762,7 +2825,8 @@
 
           dummy.position.set(gx, gy - 0.04, gz);
           dummy.rotation.set(0, rotY, 0);
-          dummy.scale.set(scale, scale * (0.8 + Math.random() * 0.6), scale);
+          const heightScale = scale * (0.8 + Math.random() * 0.6);
+          dummy.scale.set(scale, heightScale, scale);
           dummy.updateMatrix();
           this.grassMesh.setMatrixAt(placed, dummy.matrix);
 
@@ -2770,7 +2834,7 @@
           cTint.setHSL(hBase + (Math.random() - 0.5) * 0.04, sBase, lBase + (Math.random() - 0.5) * 0.1);
           this.grassMesh.setColorAt(placed, cTint);
 
-          this.grassData.push({ x: gx, y: gy - 0.04, z: gz, scale, rotY, phase });
+          this.grassData.push({ x: gx, y: gy - 0.04, z: gz, scale, heightScale, rotY, phase });
           placed++;
         }
         this.grassMesh.count = placed;
@@ -4076,6 +4140,7 @@
         requestAnimationFrame(() => this.animate());
         const dt = Math.min(0.05, this.clock.getDelta());
         this.worldTime += dt;
+        document.getElementById('hud-layer').classList.toggle('hud-flight', this.state === 'BULLET_MODE');
 
         this.fpsFrames++;
         this.fpsAccum += dt;
@@ -4108,8 +4173,10 @@
         });
         this._updateSeasonParticles(dt);
 
-        if (this.grassMesh && this.grassMesh.visible && this.grassMesh.count > 0) {
-          const dummy = new THREE.Object3D();
+        this.grassWindElapsed = (this.grassWindElapsed || 0) + dt;
+        if (this.grassMesh && this.grassMesh.visible && this.grassMesh.count > 0 && this.grassWindElapsed >= 1/20) {
+          this.grassWindElapsed = 0;
+          const dummy = this.grassWindDummy || (this.grassWindDummy = new THREE.Object3D());
           const windX = Math.sin(this.worldTime * 1.8) * 0.14;
           const windZ = Math.cos(this.worldTime * 1.4) * 0.11;
           const visibleCount = this.grassMesh.count;
@@ -4118,7 +4185,7 @@
             const gust = Math.sin(this.worldTime * 2.5 + g.phase) * 0.08;
             dummy.position.set(g.x, g.y, g.z);
             dummy.rotation.set(windX + gust, g.rotY, windZ + gust);
-            dummy.scale.set(g.scale, g.scale, g.scale);
+            dummy.scale.set(g.scale, g.heightScale, g.scale);
             dummy.updateMatrix();
             this.grassMesh.setMatrixAt(i, dummy.matrix);
           }
@@ -4200,6 +4267,15 @@
       // SHOOTER MOVEMENT, AIMING & THIRD-PERSON / SCOPE CAMERA
       // -----------------------------------------------------------------------
       _updateShooterAndCamera(dt) {
+        if (this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0) {
+          this.playerGroup.visible = true;
+          this.laserLine.visible = false;
+          this.playerGroup.position.copy(this.playerPos);
+          this._applyAvatarDownPose(this.playerGroup, this.shooterYaw, this.playerPos.y, 3 - this.mpRespawnTimer);
+          this.playerLeftLeg.rotation.x = 0;
+          this.playerRightLeg.rotation.x = 0;
+          return;
+        }
         const stats = this._getComputedStats();
 
         const keyTurnSpeed = 1.65 * this.settings.aimSens;
@@ -4253,7 +4329,7 @@
         }
 
         this.playerGroup.position.copy(this.playerPos);
-        this.playerGroup.rotation.y = this.shooterYaw;
+        this.playerGroup.rotation.set(0, this.shooterYaw, 0, 'YXZ');
         this.upperBodyPivot.rotation.x = this.shooterPitch;
 
         const stride = this.walkCycle > 0 ? Math.sin(this.walkCycle) * 0.45 : 0;
@@ -4854,7 +4930,7 @@
             this._enterImpactWatch(this.bulletPos.clone(), 0.5);
             return;
           }
-          if (this._checkBulletCollisions(forward)) {
+          if (this._checkBulletCollisions(forward, start)) {
             this.sound.updateBulletWind(false, 0, false, dt);
             return;
           }
@@ -4944,7 +5020,20 @@
         this.bulletTrailRibbon.geometry.setDrawRange(0, n * 2);
       }
 
-      _checkBulletCollisions(impactDir) {
+      _avatarOverlap(root, start, end) {
+        const ray = this.avatarOverlapRay || (this.avatarOverlapRay = new THREE.Raycaster());
+        const delta = end.clone().sub(start);
+        const length = delta.length();
+        if (length < 1e-7) return false;
+        root.updateMatrixWorld(true);
+        ray.set(start, delta.divideScalar(length));
+        ray.near = 0; ray.far = length;
+        const meshes = [];
+        root.traverse(o => { if (o.isMesh && o.visible) meshes.push(o); });
+        return ray.intersectObjects(meshes, false).length > 0;
+      }
+
+      _checkBulletCollisions(impactDir, segmentStart = this.bulletPos) {
         const bx = this.bulletPos.x;
         const by = this.bulletPos.y;
         const bz = this.bulletPos.z;
@@ -5021,7 +5110,7 @@
             const pos = rp.root.position;
             const distXZ = Math.hypot(bx - pos.x, bz - pos.z);
             const dy = by - pos.y;
-            if (distXZ < 0.58 && dy >= 0 && dy <= 2.15) {
+            if (distXZ < 0.95 && dy >= -0.35 && dy <= 2.5 && this._avatarOverlap(rp.root, segmentStart, this.bulletPos)) {
               const isHeadshot = dy >= 1.62;
               const dmg = isHeadshot ? 150 : 65;
               this.shotsHit += 1;
@@ -5221,7 +5310,13 @@
         }
         for (let i = 0; i < this.boxColliders.length; i++) {
           const box = this.boxColliders[i];
-          if (Math.abs(x - box.x) < box.hx + radius && Math.abs(z - box.z) < box.hz + radius) return true;
+          const dx = x-box.x, dz = z-box.z;
+          const a = box.yaw || 0;
+          const lx = Math.cos(a)*dx - Math.sin(a)*dz;
+          const lz = Math.sin(a)*dx + Math.cos(a)*dz;
+          const ox = Math.max(Math.abs(lx)-box.hx,0);
+          const oz = Math.max(Math.abs(lz)-box.hz,0);
+          if (Math.hypot(ox,oz) < radius) return true;
         }
         return false;
       }
@@ -5303,16 +5398,16 @@
         const objTitle = document.getElementById('hud-objective-title');
         const quotaLabel = document.getElementById('hud-quota-label');
         const quotaDisplay = document.getElementById('hud-quota-display');
-        const envSuffix = `${this.activeMap} • ${this.activeSeason}`;
+        const envSuffix = this.hudExpanded ? ` · ${this.activeMap} / ${this.activeSeason}` : ''; 
 
         if (this.activeMode === 'COMBAT_OPS') {
-          modeTag.textContent = `COMBAT W${this.combatWave}/${this.combatMaxWaves} // ${envSuffix}`;
-          objTitle.textContent = 'NEUTRALIZE ARMED SQUAD';
-          quotaLabel.textContent = 'HOSTILES LEFT';
+          modeTag.textContent = `Round ${this.combatWave}/${this.combatMaxWaves}${envSuffix}`;
+          objTitle.textContent = 'Complete the round';
+          quotaLabel.textContent = 'REMAINING';
           const alive = this.enemySoldiers.filter((e) => e.alive).length;
           quotaDisplay.innerHTML = `<span class="text-rose-400">${alive} ARMED SOLDIERS</span>`;
         } else if (this.activeMode === 'WILDLIFE_HUNT') {
-          modeTag.textContent = `HUNT // ${envSuffix}`;
+          modeTag.textContent = `Wildlife${envSuffix}`;
           objTitle.textContent = 'HUNT STAGS & BOARS (SPARE HARES)';
           quotaLabel.textContent = 'REMAINING';
           quotaDisplay.innerHTML = `
@@ -5323,7 +5418,7 @@
           const lobbyName = this.mpCurrentLobby ? this.mpCurrentLobby.name.toUpperCase() : 'PVP LOBBY';
           const goal = this.mpCurrentLobby ? this.mpCurrentLobby.killLimit : 10;
           const onlineCount = 1 + this.mpRemotePlayers.size;
-          modeTag.textContent = `PVP // ${lobbyName} (${envSuffix})`;
+          modeTag.textContent = `Online · ${lobbyName}${envSuffix}`;
           objTitle.textContent = `FIRST TO ${goal} KILLS (${onlineCount} IN LOBBY)`;
           quotaLabel.textContent = 'YOUR K / D';
           quotaDisplay.innerHTML = `<span class="text-sky-300">${this.mpKills} K / ${this.mpDeaths} D</span>`;
@@ -5334,7 +5429,7 @@
               : this.activeMap === 'TOWN'
               ? 'WATCHTOWER NEST'
               : 'HIDDEN BURROW';
-          modeTag.textContent = `SNIPER // ${envSuffix}`;
+          modeTag.textContent = `Solo challenge${envSuffix}`;
           objTitle.textContent = `${vantage} (POSITION LOCKED)`;
           quotaLabel.textContent = 'CROWD SIZE';
           quotaDisplay.innerHTML = `<span class="text-emerald-300">1 TARGET / 24 PEOPLE</span>`;
@@ -5353,7 +5448,10 @@
 
         document.getElementById('hud-ammo-text').textContent = `${this.ammoRemaining} / ${this.maxAmmo}`;
         const dots = document.getElementById('hud-ammo-dots');
-        dots.innerHTML = '';
+        const ammoKey = `${this.ammoRemaining}/${this.maxAmmo}`;
+        if (dots.dataset.ammoKey !== ammoKey) {
+          dots.dataset.ammoKey = ammoKey;
+          dots.innerHTML = '';
         for (let i = 0; i < this.maxAmmo; i++) {
           const d = document.createElement('div');
           d.className =
@@ -5361,6 +5459,7 @@
               ? 'h-2.5 flex-1 rounded-sm bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]'
               : 'h-2.5 flex-1 rounded-sm bg-slate-800 border border-slate-700';
           dots.appendChild(d);
+        }
         }
 
         const ammoSpec = SHOP_AMMO_TYPES.find((a) => a.id === this.profile.equippedAmmo);
@@ -5434,7 +5533,7 @@
         }
 
         // 3. Tactical Mini-Radar & Compass (Desktop & Tablet Top-Center)
-        if (w >= 640) {
+        if (w >= 640 && this.hudExpanded) {
           const rSize = 44;
           const rx = cx;
           const ry = 58;
@@ -5656,6 +5755,18 @@
       }
 
       _bindEvents() {
+        const hud = document.getElementById('hud-layer');
+        const details = document.getElementById('btn-hud-details');
+        this.hudExpanded = false;
+        details.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.hudExpanded = !this.hudExpanded;
+          hud.classList.toggle('hud-expanded', this.hudExpanded);
+          details.setAttribute('aria-expanded', String(this.hudExpanded));
+          details.setAttribute('aria-label', this.hudExpanded ? 'Hide detailed HUD' : 'Show detailed HUD');
+          details.textContent = this.hudExpanded ? 'LESS' : 'DETAILS';
+          this._updateHUD();
+        });
         // Title Screen Vertical Button List Wire-Up (Play - Settings - Shop - Controls)
         document.getElementById('btn-title-play').addEventListener('click', () => {
           this.sound.init();
@@ -6788,6 +6899,7 @@
         this.ammoRemaining = this.maxAmmo;
         this.hydrationRemaining = this.hydrationMax;
         this.playerGroup.position.copy(this.playerPos);
+        this.playerGroup.rotation.set(0, this.shooterYaw, 0, 'YXZ');
         this.playerGroup.visible = true;
       }
 
@@ -7026,6 +7138,7 @@
         return {
           root,
           parts: { head, torso, leftArm, rightArm, leftLeg, rightLeg },
+          label: sprite, downElapsed: 0, downBaseY: 0,
           targetPos: new THREE.Vector3(0, 0, 0),
           targetYaw: 0,
           targetPitch: 0,
@@ -7074,13 +7187,25 @@
           rp.targetPitch = p.pitch || 0;
           rp.isWalking = Boolean(p.isWalking);
           const wasBulletActive = rp.bulletActive;
-          rp.lifeId = p.lifeId || '';
-          rp.alive = p.alive !== false;
+          const nextLife = p.lifeId || '';
+          const nextAlive = p.alive !== false;
+          if (nextAlive && (!rp.alive || (rp.lifeId && rp.lifeId !== nextLife))) {
+            rp.root.position.copy(rp.targetPos);
+            rp.root.rotation.set(0, rp.targetYaw, 0, 'YXZ');
+            rp.downElapsed = 0;
+          } else if (!nextAlive && rp.alive) {
+            rp.root.position.copy(rp.targetPos);
+            rp.downBaseY = rp.root.position.y;
+            rp.downElapsed = 0;
+          }
+          rp.lifeId = nextLife;
+          rp.alive = nextAlive;
           rp.hp = typeof p.hp === 'number' ? p.hp : 100;
           rp.maxHp = typeof p.maxHp === 'number' ? p.maxHp : 100;
           rp.callsign = p.callsign || 'PLAYER';
           rp.kills = p.kills || 0;
-          rp.root.visible = rp.alive;
+          rp.root.visible = true;
+          rp.label.visible = rp.alive;
 
           rp.bulletActive = Boolean(p.bulletActive);
           if (rp.bulletActive) {
@@ -7102,6 +7227,13 @@
         }
 
         this._updateHUD();
+      }
+
+      _applyAvatarDownPose(root, yaw, baseY, elapsed) {
+        const t = Math.min(1, Math.max(0, elapsed / 0.65));
+        const e = t*t*(3-2*t);
+        root.rotation.set(-Math.PI*0.5*e, yaw, 0, 'YXZ');
+        root.position.y = baseY + 0.23*e;
       }
 
       _updateMultiplayerSession(dt) {
@@ -7131,6 +7263,11 @@
             const stride = rp.isWalking ? Math.sin(this.worldTime * 9) * 0.45 : 0;
             rp.parts.leftLeg.pivot.rotation.x = stride;
             rp.parts.rightLeg.pivot.rotation.x = -stride;
+          } else {
+            rp.downElapsed = Math.min(0.65, rp.downElapsed + dt);
+            this._applyAvatarDownPose(rp.root, rp.targetYaw, rp.downBaseY, rp.downElapsed);
+            rp.parts.leftLeg.pivot.rotation.x *= Math.exp(-8*dt);
+            rp.parts.rightLeg.pivot.rotation.x *= Math.exp(-8*dt);
           }
           if (rp.bulletActive) {
             rp.bulletMesh.position.lerp(rp.bulletTargetPos, lerpAlpha);
