@@ -517,6 +517,7 @@
             <button id="btn-open-settings" type="button" title="Graphics & Hardware Settings [O]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/25 hover:bg-sky-500/40 text-sky-200 border border-sky-400/40 transition cursor-pointer">&#9881; [O]</button>
             <button id="btn-quick-touch" type="button" title="Toggle On-Screen Mobile Buttons" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-600 transition cursor-pointer">TOUCH</button>
             <button id="btn-mute" type="button" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition cursor-pointer">SFX ON</button>
+            <button id="btn-camera-view" type="button" aria-pressed="false" title="Switch camera [C]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-1 rounded bg-sky-900/80 hover:bg-sky-800 text-sky-100 border border-sky-400/50 cursor-pointer">3RD [C]</button>
             <button id="btn-hud-details" type="button" aria-expanded="false" aria-label="Show detailed HUD" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-200 border border-slate-600 cursor-pointer">DETAILS</button>
             <button id="btn-open-pause" type="button" title="Tactical Pause [P]" class="pointer-events-auto font-mono-tech text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 transition cursor-pointer">PAUSE</button>
           </div>
@@ -578,8 +579,10 @@
         <div id="controls-hint-bar" class="hidden md:flex hud-card rounded-xl px-3.5 py-2 text-[11px] text-slate-200 flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
           <span><span class="key-cap">WASD</span> Move / Steer</span>
           <span><span class="key-cap">MOUSE</span> Aim / Turn</span>
-          <span><span class="key-cap">LMB</span> Fire</span>
-          <span><span class="key-cap">RMB/V</span> Scope</span>
+          <span><span class="key-cap">LMB DRAG</span> Camera orbit</span>
+          <span><span class="key-cap">RMB</span> Fire</span>
+          <span><span class="key-cap">CTRL/V</span> Scope</span>
+          <span><span class="key-cap">C</span> Camera</span>
           <span><span class="key-cap">SPACE</span> Slow-Mo</span>
           <span><span class="key-cap">B</span> Shop</span>
           <span><span class="key-cap">O</span> Graphics</span>
@@ -702,7 +705,7 @@
               Play solo or join friends online. Open Controls for a quick guide to the game.
             </p>
             <div class="flex items-center justify-end gap-2 mt-3 pt-2.5 border-t border-slate-700/80 font-mono-tech text-[10px] text-slate-400">
-              <span>VER 3.0</span>
+              <span>VER 5.0</span>
               <span>&bull;</span>
               <span class="text-emerald-300 font-bold">60 FPS ENGINE</span>
             </div>
@@ -860,7 +863,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4 text-xs">
           <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700/70">
             <span class="font-mono-tech font-bold text-amber-400">ON FOOT / MOBILE:</span>
-            <span class="text-slate-300"> <span class="key-cap">WASD</span> or Left Stick to move, Drag/Mouse to aim, <span class="key-cap">RMB/V</span> Scope, <span class="key-cap">LMB</span> Fire.</span>
+            <span class="text-slate-300"> <span class="key-cap">WASD</span> or Left Stick to move, Drag/Mouse to aim, <span class="key-cap">CTRL/V</span> Scope, <span class="key-cap">RMB</span> Fire.</span>
           </div>
           <div class="bg-slate-900/70 rounded-xl p-3 border border-slate-700/70">
             <span class="font-mono-tech font-bold text-sky-400">GUIDED BULLET:</span>
@@ -901,9 +904,11 @@
             <div class="space-y-2.5 text-slate-200">
               <div class="flex items-center justify-between"><span>Move / Strafe</span><span><span class="key-cap">W</span> <span class="key-cap">A</span> <span class="key-cap">S</span> <span class="key-cap">D</span></span></div>
               <div class="flex items-center justify-between"><span>Sprint</span><span><span class="key-cap">SHIFT</span></span></div>
+              <div class="flex items-center justify-between"><span>Third-person camera orbit</span><span><span class="key-cap">LMB + DRAG</span></span></div>
               <div class="flex items-center justify-between"><span>Aim Rifle</span><span><span class="key-cap">MOUSE</span> / <span class="key-cap">ARROWS</span></span></div>
-              <div class="flex items-center justify-between"><span>Sniper Scope Zoom</span><span><span class="key-cap">RMB</span> or <span class="key-cap">V</span></span></div>
-              <div class="flex items-center justify-between"><span>Fire Guided Round</span><span><span class="key-cap">LMB</span> or <span class="key-cap">F</span></span></div>
+              <div class="flex items-center justify-between"><span>Switch camera</span><span class="key-cap">C</span></div>
+              <div class="flex items-center justify-between"><span>Sniper Scope Zoom</span><span><span class="key-cap">CTRL</span> or <span class="key-cap">V</span></span></div>
+              <div class="flex items-center justify-between"><span>Fire Guided Round</span><span><span class="key-cap">RMB</span> or <span class="key-cap">F</span></span></div>
             </div>
           </div>
 
@@ -1292,6 +1297,25 @@
           </div>
         </div>
 
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5">
+            <div class="flex justify-between gap-2"><strong>AI DIFFICULTY</strong><span id="val-ai-level" class="text-amber-300 font-bold">NORMAL</span></div>
+            <p class="text-slate-400 mt-1">Solo arcade opponents change movement patterns and agility. Does not affect PvP.</p>
+            <div class="grid grid-cols-3 gap-1.5 mt-2" id="ai-level-buttons">
+              <button type="button" data-ai="EASY" class="ai-btn py-2 rounded border">EASY</button>
+              <button type="button" data-ai="NORMAL" class="ai-btn py-2 rounded border">NORMAL</button>
+              <button type="button" data-ai="HARD" class="ai-btn py-2 rounded border">HARD</button>
+            </div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5">
+            <div class="flex justify-between gap-2"><strong>ENVIRONMENT REFLECTIONS</strong><span id="val-reflections" class="text-amber-300 font-bold">ON</span></div>
+            <p class="text-slate-400 mt-1">Static map reflections on water and glossy materials.</p>
+            <div class="grid grid-cols-2 gap-1.5 mt-2">
+              <button type="button" data-setting="reflections" data-val="OFF" class="opt-btn py-2 rounded border">OFF</button>
+              <button type="button" data-setting="reflections" data-val="ON" class="opt-btn py-2 rounded border">ON</button>
+            </div>
+          </div>
+        </div>
         <!-- Individual Graphics & Hardware Controls -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4 text-xs">
           <!-- Render Resolution Scale -->
@@ -1688,16 +1712,16 @@
         skyBg: 0x87ceeb,
         fogColor: 0xd8effd,
         horizon: 0xe6f5ff,
-        mid: 0x7cc4fa,
-        zenith: 0x2f7ed8,
+        mid: 0x65baff,
+        zenith: 0x1767c4,
         sunColor: 0xfff9e6,
         sunIntensity: 1.32,
-        grassA: 0x5ea33b,
-        grassB: 0x4a8c2e,
+        grassA: 0x67b344,
+        grassB: 0x348739,
         path: 0xb6a478,
         bladeHsl: [0.25, 0.56, 0.42],
-        leafA: 0x3b7a2a,
-        leafB: 0x4c9436,
+        leafA: 0x26783c,
+        leafB: 0x5aa83e,
         roofTint: 0x9a3412,
         snowCap: false,
         weatherType: 'NONE'
@@ -1712,8 +1736,8 @@
         zenith: 0x1d6fd1,
         sunColor: 0xfff0b3,
         sunIntensity: 1.52,
-        grassA: 0x76a832,
-        grassB: 0x8fb339,
+        grassA: 0x93b638,
+        grassB: 0x659e33,
         path: 0xd6be8a,
         bladeHsl: [0.21, 0.58, 0.44],
         leafA: 0x4d8c2a,
@@ -1728,12 +1752,12 @@
         skyBg: 0xe8a86b,
         fogColor: 0xf7cfa4,
         horizon: 0xfde2c4,
-        mid: 0xe59866,
+        mid: 0xf3a366,
         zenith: 0x5c7699,
         sunColor: 0xffd29d,
         sunIntensity: 1.28,
         grassA: 0xb87a28,
-        grassB: 0x9c5a1e,
+        grassB: 0xa95b27,
         path: 0x9c8265,
         bladeHsl: [0.09, 0.66, 0.43],
         leafA: 0xea580c,
@@ -1832,6 +1856,9 @@
 
         // Player & Match Stats
         this.score = 0;
+        this.motionVX = this.motionVZ = this.walkBlend = this.runBlend = 0;
+        this.orbitDragging = false; this.orbitYaw = this.orbitPitch = this.orbitBlend = 0;
+        this.soloDownElapsed = 0;
         this.headshots = 0;
         this.shotsFired = 0;
         this.shotsHit = 0;
@@ -1861,6 +1888,18 @@
         this.isScoped = false;
         this.currentFov = 65;
         this.walkCycle = 0;
+        this.walkPhase = 0;
+        this.walkBlend = 0;
+        this.firstPerson = false;
+        this.orbitDragging = false;
+        this.orbitYaw = 0;
+        this.orbitPitch = 0;
+        this.orbitBlend = 0;
+        this.motionVX = 0;
+        this.motionVZ = 0;
+        this.runBlend = 0;
+        this.damagePulse = 0;
+        this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Bullet Flight State
         this.bulletPos = new THREE.Vector3();
@@ -2040,6 +2079,8 @@
         const isMobile = this._detectMobileDevice();
         return {
           preset: isMobile ? 'LOW' : 'HIGH',
+          aiDifficulty: 'NORMAL',
+          reflections: isMobile ? 'OFF' : 'ON',
           resolutionScale: isMobile ? '0.75' : 'NATIVE',
           shadows: isMobile ? 'OFF' : 'HIGH',
           grassDensity: isMobile ? 0.25 : 1,
@@ -2121,11 +2162,11 @@
         this.renderer.setSize(window.innerWidth, window.innerHeight, false);
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.08;
+        this.renderer.toneMappingExposure = 1.03;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x69745d, 0.78);
+        const hemiLight = new THREE.HemisphereLight(0xd9edff, 0x71865b, 0.92);
         this.scene.add(hemiLight);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.17);
@@ -2162,6 +2203,11 @@
       // OPEN MAPS (CLASSIC GRASSLAND, TOWN, CITY) & DYNAMIC SEASONS
       // -----------------------------------------------------------------------
       _clearWorldEnvironment() {
+        this.scene.environment = null;
+        if (this.reflectionTarget) this.reflectionTarget.dispose();
+        this.reflectionTarget = null;
+        this.reflectionDirty = true;
+        this.reflectionSurfaces = [];
         const geometries = new Set(), materials = new Set();
         this.worldGroup.traverse(obj => {
           if (obj.geometry) geometries.add(obj.geometry);
@@ -2181,6 +2227,30 @@
         this.grassData = [];
         this.weatherParticles = null;
         this.weatherData = [];
+      }
+
+      _surfaceDetailTexture() {
+        if (this.surfaceDetailTexture) return this.surfaceDetailTexture;
+        const size = 128, data = new Uint8Array(size * size * 4);
+        let seed = 9173;
+        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+          seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+          const u = x / size * Math.PI * 2, v = y / size * Math.PI * 2;
+          const broad = Math.sin(u*3+Math.cos(v*4))*9 + Math.cos(v*5+u*2)*7;
+          const value = Math.max(0, Math.min(255, 224 + broad + (seed/4294967296-0.5)*34));
+          const i = (y*size+x)*4;
+          data[i]=data[i+1]=data[i+2]=value; data[i+3]=255;
+        }
+        const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(100,100);
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.generateMipmaps = true;
+        texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+        texture.needsUpdate = true;
+        this.surfaceDetailTexture = texture;
+        return texture;
       }
 
       _buildEnvironment() {
@@ -2239,7 +2309,7 @@
           emissive: seasonId === 'AUTUMN' ? 0xfed7aa : 0xdbeafe,
           emissiveIntensity: 0.25
         });
-        const puffGeo = new THREE.DodecahedronGeometry(1, 1);
+        const puffGeo = new THREE.SphereGeometry(1, 18, 12);
         for (let i = 0; i < 18; i++) {
           const cg = new THREE.Group();
           const puffs = 3 + (i % 3);
@@ -2314,7 +2384,7 @@
 
         const groundMesh = new THREE.Mesh(
           groundGeo,
-          new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0.03 })
+          new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, map: this._surfaceDetailTexture(), bumpMap: this._surfaceDetailTexture(), bumpScale: 0.025 })
         );
         groundMesh.receiveShadow = true;
         this.worldGroup.add(groundMesh);
@@ -2341,6 +2411,41 @@
 
         // 5. Season Weather Particles (Winter Snowflakes / Autumn Falling Orange Leaves)
         this._buildSeasonParticles(sc);
+        this.reflectionDirty = true;
+      }
+
+      _refreshEnvironmentReflections() {
+        if (!this.reflectionDirty || this.settings.reflections !== 'ON') return;
+        this.reflectionDirty = false;
+        const hidden = [this.modeGroup, this.fxGroup, this.playerGroup, ...(this.reflectionSurfaces || [])].filter(Boolean);
+        const previous = hidden.map(o => o.visible);
+        const shadowAuto = this.renderer.shadowMap.autoUpdate;
+        let target = null;
+        try {
+          hidden.forEach(o => o.visible = false);
+          this.scene.environment = null;
+          target = new THREE.WebGLCubeRenderTarget(128, {
+            generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter,
+            encoding: THREE.sRGBEncoding
+          });
+          const capture = new THREE.CubeCamera(0.2, 650, target);
+          const anchor = (this.reflectionSurfaces || [])[0];
+          if (anchor) anchor.getWorldPosition(capture.position);
+          else capture.position.set(0, 2, 0);
+          capture.position.y += 0.45;
+          this.renderer.shadowMap.autoUpdate = false;
+          capture.update(this.renderer, this.scene);
+          if (this.reflectionTarget) this.reflectionTarget.dispose();
+          this.reflectionTarget = target;
+          this.scene.environment = target.texture;
+        } catch (err) {
+          if (target) target.dispose();
+          this.scene.environment = null;
+          console.warn('Static reflections unavailable', err);
+        } finally {
+          hidden.forEach((o,i) => o.visible = previous[i]);
+          this.renderer.shadowMap.autoUpdate = shadowAuto;
+        }
       }
 
       _buildClassicMapFeatures(sc) {
@@ -2759,7 +2864,9 @@
           color: sc.snowCap ? 0xbae6fd : 0x38bdf8,
           emissive: 0x0284c7,
           emissiveIntensity: 0.25,
-          roughness: sc.snowCap ? 0.45 : 0.2
+          roughness: sc.snowCap ? 0.45 : 0.13,
+          metalness: sc.snowCap ? 0.1 : 0.45,
+          envMapIntensity: 0.85
         });
 
         const profile = [[0,0],[3.7,0],[3.7,0.16],[3.4,0.22],[3.4,0.75],[3.05,0.75],[3.05,0.2],[0,0.2]].map(([r,y]) => new THREE.Vector2(r,y));
@@ -2773,6 +2880,7 @@
         water.position.y = 0.62;
         water.receiveShadow = true;
         fg.add(water);
+        this.reflectionSurfaces.push(water);
 
         const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 2.2, 12), stoneMat);
         pillar.position.y = 1.1;
@@ -2862,7 +2970,7 @@
           const scVal = 0.88 + (idx % 4) * 0.16;
           tg.scale.setScalar(scVal);
 
-          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.52, 3.6, 8), trunkMat);
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.52, 3.6, 12), trunkMat);
           trunk.position.y = 1.8;
           trunk.castShadow = true;
           trunk.receiveShadow = true;
@@ -2870,11 +2978,13 @@
 
           const c1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.3, 1), leafMatA);
           c1.position.set(0, 4.3, 0);
+          c1.scale.set(1.1, 0.94, 1.06);
           c1.castShadow = true;
           tg.add(c1);
 
           const c2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.75, 1), leafMatB);
           c2.position.set(0.9, 5.4, 0.5);
+          c2.scale.set(0.96, 1.12, 1.02);
           c2.castShadow = true;
           tg.add(c2);
 
@@ -2960,10 +3070,18 @@
         const makeLeg = (x) => {
           const p = new THREE.Group();
           p.position.set(x, 0.92, 0);
-          const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.86, 0.17), pantsMat);
-          m.position.y = -0.43;
+          const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.43, 0.17), pantsMat);
+          m.position.y = -0.215;
           m.castShadow = true;
           p.add(m);
+          const knee = new THREE.Group();
+          knee.position.y = -0.43;
+          const shin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.43, 0.16), pantsMat);
+          shin.position.y = -0.215;
+          shin.castShadow = true;
+          knee.add(shin);
+          p.add(knee);
+          p.userData.knee = knee;
           this.playerGroup.add(p);
           return p;
         };
@@ -3114,6 +3232,7 @@
         const presets = {
           POTATO: {
             preset: 'POTATO',
+            reflections: 'OFF',
             resolutionScale: '0.5',
             shadows: 'OFF',
             grassDensity: 0,
@@ -3122,6 +3241,7 @@
           },
           LOW: {
             preset: 'LOW',
+            reflections: 'OFF',
             resolutionScale: '0.75',
             shadows: 'OFF',
             grassDensity: 0.25,
@@ -3130,6 +3250,7 @@
           },
           MEDIUM: {
             preset: 'MEDIUM',
+            reflections: 'OFF',
             resolutionScale: '1.0',
             shadows: 'LOW',
             grassDensity: 0.6,
@@ -3138,6 +3259,7 @@
           },
           HIGH: {
             preset: 'HIGH',
+            reflections: 'ON',
             resolutionScale: 'NATIVE',
             shadows: 'HIGH',
             grassDensity: 1,
@@ -3208,12 +3330,29 @@
           fpsBadge.style.display = s.showFps ? 'inline-block' : 'none';
         }
 
+        const reflect = s.reflections === 'ON';
+        this.scene.environment = reflect && this.reflectionTarget ? this.reflectionTarget.texture : null;
+        if (reflect && !this.reflectionTarget) this.reflectionDirty = true;
         this.sound.setMasterVolume(s.masterVolume);
       }
 
       syncSettingsUI() {
         const s = this.settings;
-        document.getElementById('settings-active-preset').textContent = `PRESET: ${s.preset}`;
+        document.getElementById('settings-active-preset').textContent = `CURRENT: ${s.preset || 'CUSTOM'}`;
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+          const active = btn.dataset.preset === s.preset;
+          btn.setAttribute('aria-pressed', String(active));
+          btn.style.outline = active ? '2px solid #fbbf24' : '';
+          btn.style.background = active ? '#f59e0b' : '';
+          btn.style.color = active ? '#0f172a' : '';
+        });
+        document.getElementById('val-ai-level').textContent = s.aiDifficulty || 'NORMAL';
+        document.getElementById('val-reflections').textContent = s.reflections || 'OFF';
+        document.querySelectorAll('.ai-btn').forEach(btn => {
+          const active = btn.dataset.ai === (s.aiDifficulty || 'NORMAL');
+          btn.setAttribute('aria-pressed', String(active));
+          btn.className = 'ai-btn py-2 rounded border font-bold ' + (active ? 'bg-amber-500 text-slate-950 border-amber-300' : 'bg-slate-800 text-slate-200 border-slate-600');
+        });
         document.getElementById('val-res-scale').textContent =
           s.resolutionScale === 'NATIVE' ? 'NATIVE' : `${s.resolutionScale}x`;
         document.getElementById('val-shadows').textContent =
@@ -3620,6 +3759,9 @@
         this._scatterFieldAmmoCrates();
 
         this.score = 0;
+        this.motionVX = this.motionVZ = this.walkBlend = this.runBlend = 0;
+        this.orbitDragging = false; this.orbitYaw = this.orbitPitch = this.orbitBlend = 0;
+        this.soloDownElapsed = 0;
         this.headshots = 0;
         this.shotsFired = 0;
         this.shotsHit = 0;
@@ -4091,12 +4233,15 @@
         const makeLeg = (x) => {
           const pivot = new THREE.Group();
           pivot.position.set(x, 0.88, 0);
-          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.84, 0.17), pantsMat);
-          mesh.position.y = -0.42;
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.17), pantsMat);
+          mesh.position.y = -0.21;
           mesh.castShadow = true;
           pivot.add(mesh);
+          const knee = new THREE.Group(); knee.position.y = -0.42;
+          const shin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.42, 0.16), pantsMat);
+          shin.position.y = -0.21; shin.castShadow = true; knee.add(shin); pivot.add(knee);
           root.add(pivot);
-          return { pivot, mesh };
+          return { pivot, mesh, knee };
         };
         const leftLeg = makeLeg(-0.14);
         const rightLeg = makeLeg(0.14);
@@ -4161,6 +4306,7 @@
         }
 
         this._update(dt);
+        this._refreshEnvironmentReflections();
         this.renderer.render(this.scene, this.camera);
         this._render2DHud();
       }
@@ -4224,6 +4370,10 @@
 
         // Decay Hitmarker, Recoil, Muzzle Flash, Camera Shake & Floating Popups
         if (this.hitmarkerTimer > 0) this.hitmarkerTimer = Math.max(0, this.hitmarkerTimer - dt);
+        if (this.damagePulse > 0) {
+          this.damagePulse = Math.max(0, this.damagePulse - dt*2.8);
+          document.getElementById('damage-vignette').style.opacity = String(this.damagePulse * 0.72);
+        }
         if (this.cameraShake > 0) this.cameraShake = Math.max(0, this.cameraShake - dt * 1.4);
         if (this.recoilPitchOffset > 0) this.recoilPitchOffset = Math.max(0, this.recoilPitchOffset - dt * 0.45);
         if (this.muzzleFlashTimer > 0) {
@@ -4260,6 +4410,12 @@
         } else if (this.state === 'IMPACT_WATCH') {
           this._updateImpactWatch(dt);
           this.sound.updateBulletWind(false, 0, false, dt);
+        } else if (this.state === 'MISSION_END' && this.activeMode === 'COMBAT_OPS' && this.playerHP <= 0) {
+          this.soloDownElapsed = Math.min(1.3, (this.soloDownElapsed || 0) + dt);
+          this.playerGroup.visible = true;
+          this.playerGroup.position.copy(this.playerPos);
+          this._applyAvatarDownPose(this.playerGroup, this.shooterYaw, this.playerPos.y, this.soloDownElapsed, {leftLeg:this.playerLeftLeg,rightLeg:this.playerRightLeg});
+          this.laserLine.visible = false;
         }
       }
 
@@ -4271,9 +4427,12 @@
           this.playerGroup.visible = true;
           this.laserLine.visible = false;
           this.playerGroup.position.copy(this.playerPos);
-          this._applyAvatarDownPose(this.playerGroup, this.shooterYaw, this.playerPos.y, 3 - this.mpRespawnTimer);
-          this.playerLeftLeg.rotation.x = 0;
-          this.playerRightLeg.rotation.x = 0;
+          this._applyAvatarDownPose(this.playerGroup, this.shooterYaw, this.playerPos.y, 3 - this.mpRespawnTimer, {leftLeg:this.playerLeftLeg,rightLeg:this.playerRightLeg});
+          this.motionVX = this.motionVZ = 0;
+          const focus = this.playerPos.clone().add(new THREE.Vector3(0,0.9,0));
+          const offset = new THREE.Vector3(2.2,2.4,3.2).applyAxisAngle(new THREE.Vector3(0,1,0),this.shooterYaw);
+          this.camera.position.lerp(focus.clone().add(offset),1-Math.exp(-5*dt));
+          this.camera.lookAt(focus);
           return;
         }
         const stats = this._getComputedStats();
@@ -4300,6 +4459,8 @@
         const isSprinting = Boolean(!isImmobilizedSniper && (this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.mobileSprint));
         const moveSpeed = isSprinting ? 10.5 : 7.0;
 
+        const previousX = this.playerPos.x, previousZ = this.playerPos.z;
+        let desiredVX = 0, desiredVZ = 0;
         if (!isImmobilizedSniper && Math.hypot(moveX, moveZ) > 0.05) {
           const forwardFlat = new THREE.Vector3(-Math.sin(this.shooterYaw), 0, -Math.cos(this.shooterYaw));
           const rightFlat = new THREE.Vector3(Math.cos(this.shooterYaw), 0, -Math.sin(this.shooterYaw));
@@ -4308,16 +4469,29 @@
             .addScaledVector(forwardFlat, -moveZ);
           if (moveVec.length() > 1) moveVec.normalize();
 
-          const nextX = Math.max(-44, Math.min(44, this.playerPos.x + moveVec.x * moveSpeed * dt));
-          const nextZ = Math.max(-44, Math.min(44, this.playerPos.z + moveVec.z * moveSpeed * dt));
-          if (!this._isBlockedByWorld(nextX, nextZ, 0.55)) {
-            this.playerPos.x = nextX;
-            this.playerPos.z = nextZ;
-          }
-          this.walkCycle += dt * (isSprinting ? 13 : 9);
-        } else {
-          this.walkCycle = 0;
+          desiredVX = moveVec.x * moveSpeed;
+          desiredVZ = moveVec.z * moveSpeed;
         }
+        const acceleration = 1 - Math.exp(-(desiredVX || desiredVZ ? 15 : 20) * dt);
+        this.motionVX += (desiredVX - this.motionVX) * acceleration;
+        this.motionVZ += (desiredVZ - this.motionVZ) * acceleration;
+        if (isImmobilizedSniper) this.motionVX = this.motionVZ = 0;
+        if (Math.abs(this.motionVX) < 0.02) this.motionVX = 0;
+        if (Math.abs(this.motionVZ) < 0.02) this.motionVZ = 0;
+        const nextX = Math.max(-44, Math.min(44, this.playerPos.x + this.motionVX * dt));
+        const nextZ = Math.max(-44, Math.min(44, this.playerPos.z + this.motionVZ * dt));
+        if (!isImmobilizedSniper) {
+          if (!this._isBlockedByWorld(nextX, this.playerPos.z, 0.55)) this.playerPos.x = nextX;
+          else this.motionVX = 0;
+          if (!this._isBlockedByWorld(this.playerPos.x, nextZ, 0.55)) this.playerPos.z = nextZ;
+          else this.motionVZ = 0;
+        }
+        const moved = Math.hypot(this.playerPos.x - previousX, this.playerPos.z - previousZ) > 0.0001;
+        const actualSpeed = dt > 0 ? Math.hypot(this.playerPos.x - previousX, this.playerPos.z - previousZ) / dt : 0;
+        this.runBlend += ((isSprinting && moved ? 1 : 0) - this.runBlend) * (1 - Math.exp(-8*dt));
+        this.walkCycle = moved ? this.walkCycle + dt * (8 + 5*this.runBlend) : 0;
+        if (moved) this.walkPhase += dt * (8 + 5*this.runBlend) * Math.min(1.2, actualSpeed / (7 + 3.5*this.runBlend));
+        this.walkBlend += (Math.min(1, actualSpeed / 5) - this.walkBlend) * (1 - Math.exp(-12*dt));
 
         // Keep elevated perch elevation when in City rooftop or Town watchtower nest
         if (isImmobilizedSniper && this.activeMap === 'CITY') {
@@ -4332,11 +4506,15 @@
         this.playerGroup.rotation.set(0, this.shooterYaw, 0, 'YXZ');
         this.upperBodyPivot.rotation.x = this.shooterPitch;
 
-        const stride = this.walkCycle > 0 ? Math.sin(this.walkCycle) * 0.45 : 0;
+        const stride = Math.sin(this.walkPhase) * (0.43 + 0.26*this.runBlend) * this.walkBlend;
         this.playerLeftLeg.rotation.x = stride;
         this.playerRightLeg.rotation.x = -stride;
+        this.playerLeftLeg.userData.knee.rotation.x = Math.max(0, -Math.sin(this.walkPhase)) * (0.28 + 0.42*this.runBlend)*this.walkBlend;
+        this.playerRightLeg.userData.knee.rotation.x = Math.max(0, Math.sin(this.walkPhase)) * (0.28 + 0.42*this.runBlend)*this.walkBlend;
+        this.upperBodyPivot.position.y = 1.48 + Math.sin(this.walkPhase*2)*0.025*this.walkBlend;
+        this.upperBodyPivot.rotation.z = Math.sin(this.walkPhase)*0.035*this.walkBlend;
 
-        const wantScope = Boolean(this.mouseDownRight || this.scopeToggle);
+        const wantScope = Boolean(this.scopeToggle);
         if (wantScope !== this.isScoped) {
           this.isScoped = wantScope;
           this._updateScopeUI(this.isScoped);
@@ -4349,24 +4527,42 @@
         this.camera.updateProjectionMatrix();
 
         const camAlpha = 1 - Math.exp(-22 * dt);
-        if (this.isScoped) {
+        const canOrbit = !this.isScoped && !this.firstPerson;
+        if (!canOrbit) this.orbitDragging = false;
+        this.orbitBlend += ((canOrbit && this.orbitDragging ? 1 : 0)-this.orbitBlend)*(1-Math.exp(-12*dt));
+        if (!this.orbitDragging) {
+          this.orbitYaw *= Math.exp(-7*dt);
+          this.orbitPitch *= Math.exp(-7*dt);
+        }
+        if (this.isScoped || this.firstPerson) {
           this.playerGroup.visible = false;
-          const eyePos = new THREE.Vector3(this.playerPos.x, this.playerPos.y + 1.65, this.playerPos.z);
+          const bob = this.reducedMotion || this.isScoped ? 0 : Math.sin(this.walkPhase * 2) * 0.025 * this.walkBlend;
+          const eyePos = new THREE.Vector3(this.playerPos.x, this.playerPos.y + 1.72 + bob, this.playerPos.z);
           this.camera.position.lerp(eyePos, camAlpha);
         } else {
           this.playerGroup.visible = !(this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0);
           const offset = new THREE.Vector3(0.62, 1.85, 3.05);
-          offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.shooterYaw);
+          offset.y += this.orbitPitch * 2.6;
+          offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.shooterYaw + this.orbitYaw);
+          const focus = this.playerPos.clone().add(new THREE.Vector3(0, 1.45, 0));
           const desiredCam = this.playerPos.clone().add(offset);
+          const obstruction = this._segmentEnvironmentHit(focus, desiredCam);
+          if (obstruction) desiredCam.lerp(focus, 1-Math.max(0.08, (obstruction.distance-0.28)/Math.max(0.1,focus.distanceTo(desiredCam))));
           const minCamY = terrainHeight(desiredCam.x, desiredCam.z) + 0.75;
           if (desiredCam.y < minCamY) desiredCam.y = minCamY;
           this.camera.position.lerp(desiredCam, camAlpha);
         }
 
         this.camera.rotation.y = this.shooterYaw;
-        this.camera.rotation.x = this.shooterPitch + this.recoilPitchOffset - (this.isScoped ? 0 : 0.045);
-        this.camera.rotation.z = 0;
-        if (this.cameraShake > 0) {
+        this.camera.rotation.x = this.shooterPitch + this.recoilPitchOffset - (this.isScoped || this.firstPerson ? 0 : 0.045);
+        this.camera.rotation.z = this.reducedMotion ? 0 : Math.sin(this.damagePulse*Math.PI)*0.018;
+        if (canOrbit && this.orbitBlend > 0.002) {
+          const standard = this.camera.quaternion.clone();
+          this.camera.lookAt(this.playerPos.x, this.playerPos.y+1.35, this.playerPos.z);
+          const orbit = this.camera.quaternion.clone();
+          this.camera.quaternion.copy(standard).slerp(orbit, this.orbitBlend);
+        }
+        if (this.cameraShake > 0 && !this.reducedMotion) {
           this.camera.position.x += (Math.random() - 0.5) * this.cameraShake * 0.25;
           this.camera.position.y += (Math.random() - 0.5) * this.cameraShake * 0.25;
         }
@@ -4379,7 +4575,7 @@
         const posAttr = this.laserLine.geometry.attributes.position;
         posAttr.setXYZ(1, 0, 0, -laserLen);
         posAttr.needsUpdate = true;
-        this.laserLine.visible = !this.isScoped;
+        this.laserLine.visible = !this.isScoped && !this.firstPerson && !this.orbitDragging;
       }
 
       _getAimRayDirection() {
@@ -4562,15 +4758,23 @@
           const yawToPlayer = Math.atan2(-toPlayer.x, -toPlayer.z);
           enemy.root.rotation.y = yawToPlayer;
 
+          const difficulty = { EASY: [3.0, 1.45], NORMAL: [1.7, 2.2], HARD: [0.75, 3.1] }[this.settings.aiDifficulty] || [1.7, 2.2];
           enemy.moveTimer -= dt;
+          // Arcade evasion: a round-start cue can trigger a brief, randomized direction change.
+          // No trajectory prediction or changes to opponent attack behavior.
+          if (this.state === 'BULLET_MODE' && enemy.lastArcadeCue !== this.shotsFired) {
+            enemy.lastArcadeCue = this.shotsFired;
+            const chance = this.settings.aiDifficulty === 'HARD' ? 0.8 : this.settings.aiDifficulty === 'EASY' ? 0.15 : 0.45;
+            if (Math.random() < chance) enemy.moveTimer = Math.min(enemy.moveTimer, 0.2 + Math.random()*0.45);
+          }
           if (enemy.moveTimer <= 0) {
-            enemy.moveTimer = 1.6 + Math.random() * 2.4;
+            enemy.moveTimer = difficulty[0] * (0.75 + Math.random()*0.8);
             enemy.strafeDir *= -1;
           }
 
           const right = new THREE.Vector3(Math.cos(yawToPlayer), 0, -Math.sin(yawToPlayer));
           const forward = new THREE.Vector3(-Math.sin(yawToPlayer), 0, -Math.cos(yawToPlayer));
-          const moveStep = new THREE.Vector3().addScaledVector(right, enemy.strafeDir * 2.2 * dt);
+          const moveStep = new THREE.Vector3().addScaledVector(right, enemy.strafeDir * difficulty[1] * dt);
 
           if (dist > 34) {
             moveStep.addScaledVector(forward, 2.0 * dt);
@@ -4592,6 +4796,10 @@
           const swing = Math.sin(enemy.walkPhase) * 0.36;
           enemy.parts.leftLeg.pivot.rotation.x = swing;
           enemy.parts.rightLeg.pivot.rotation.x = -swing;
+          if (enemy.parts.leftLeg.knee) {
+            enemy.parts.leftLeg.knee.rotation.x = Math.max(0,-Math.sin(enemy.walkPhase))*0.32;
+            enemy.parts.rightLeg.knee.rotation.x = Math.max(0,Math.sin(enemy.walkPhase))*0.32;
+          }
 
           enemy.fireCooldown -= dt;
           if (enemy.fireCooldown <= 0 && dist < 56) {
@@ -4673,11 +4881,8 @@
         this.cameraShake = Math.max(this.cameraShake, 0.35);
         this.sound.playPlayerHurt();
 
-        const vig = document.getElementById('damage-vignette');
-        vig.style.opacity = '1';
-        setTimeout(() => {
-          vig.style.opacity = '0';
-        }, 260);
+        this.damagePulse = 1;
+        document.getElementById('damage-vignette').style.opacity = '0.72';
 
         this._updateHUD();
         if (this.playerHP <= 0) {
@@ -4810,7 +5015,7 @@
       }
 
       fireBullet() {
-        if (this.state !== 'SHOOTER_MODE' || (this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0)) return;
+        if (this.orbitDragging || this.state !== 'SHOOTER_MODE' || (this.activeMode === 'MULTIPLAYER' && this.mpRespawnTimer > 0)) return;
         if (this.ammoRemaining <= 0) {
           this._triggerAutomaticResupply();
           return;
@@ -5346,17 +5551,8 @@
         for (let i = this.ragdolls.length - 1; i >= 0; i--) {
           const r = this.ragdolls[i];
           r.elapsed += dt;
-          const t = Math.min(1, r.elapsed / 0.65);
-          const ease = t*t*(3-2*t);
-          r.root.rotation.set(-Math.PI*0.5*ease, r.yaw, 0, 'YXZ');
-          r.root.position.y = r.ground + 0.22*ease;
-          if (r.parts) {
-            r.parts.leftArm.pivot.rotation.x *= 1-ease;
-            r.parts.rightArm.pivot.rotation.x *= 1-ease;
-            r.parts.leftLeg.pivot.rotation.x *= 1-ease;
-            r.parts.rightLeg.pivot.rotation.x *= 1-ease;
-          }
-          if (t === 1) this.ragdolls.splice(i, 1); // model stays on the map until mode reset
+          this._applyAvatarDownPose(r.root, r.yaw, r.ground, r.elapsed, r.parts);
+          if (r.elapsed >= 1.3) this.ragdolls.splice(i, 1); // model stays on the map until mode reset
         }
 
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -5364,6 +5560,12 @@
           p.life -= dt;
           p.vel.y -= 12 * dt;
           p.mesh.position.addScaledVector(p.vel, dt);
+          const groundY = terrainHeight(p.mesh.position.x,p.mesh.position.z,this.activeMap)+0.035;
+          if (p.mesh.position.y < groundY) {
+            p.mesh.position.y = groundY;
+            if (p.vel.y < 0) p.vel.y *= -0.28;
+            p.vel.x *= 0.72; p.vel.z *= 0.72;
+          }
           p.mesh.scale.setScalar(Math.max(0.01, p.life * 1.6));
           if (p.life <= 0) {
             this.fxGroup.remove(p.mesh);
@@ -5722,6 +5924,12 @@
         const ySign = this.settings.invertY ? -1 : 1;
 
         if (this.state === 'SHOOTER_MODE') {
+          if (this.orbitDragging && !this.firstPerson && !this.isScoped) {
+            this.orbitYaw -= rawDx * 0.005;
+            this.orbitYaw = Math.atan2(Math.sin(this.orbitYaw), Math.cos(this.orbitYaw));
+            this.orbitPitch = Math.max(-0.35, Math.min(0.8, this.orbitPitch + rawDy * 0.004 * ySign));
+            return;
+          }
           const scopeScale = this.isScoped ? 0.36 : 1.0;
           const sens = 0.0023 * this.settings.aimSens * scopeScale;
           const minPitch = this.activeMode === 'CROWD_SNIPER' ? -0.95 : -0.62;
@@ -5754,7 +5962,16 @@
         } catch (e) {}
       }
 
+      _toggleCameraView() {
+        this.firstPerson = !this.firstPerson;
+        this.orbitDragging = false; this.orbitYaw = this.orbitPitch = this.orbitBlend = 0;
+        const button = document.getElementById('btn-camera-view');
+        button.textContent = this.firstPerson ? '1ST [C]' : '3RD [C]';
+        button.setAttribute('aria-pressed', String(this.firstPerson));
+      }
+
       _bindEvents() {
+        document.getElementById('btn-camera-view').addEventListener('click', () => this._toggleCameraView());
         const hud = document.getElementById('hud-layer');
         const details = document.getElementById('btn-hud-details');
         this.hudExpanded = false;
@@ -5994,6 +6211,11 @@
           btn.addEventListener('click', () => this.applyGraphicsPreset(btn.dataset.preset));
         });
 
+        document.querySelectorAll('.ai-btn').forEach(btn => btn.addEventListener('click', () => {
+          this.settings.aiDifficulty = btn.dataset.ai;
+          this._saveProfileToCloud();
+          this.syncSettingsUI();
+        }));
         document.querySelectorAll('.opt-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             const key = btn.dataset.setting;
@@ -6049,6 +6271,7 @@
 
         document.addEventListener('pointerlockchange', () => {
           this.isPointerLocked = document.pointerLockElement === this.webglCanvas;
+          if (!this.isPointerLocked) { this.orbitDragging = false; this.isDraggingLook = false; }
         });
 
         window.addEventListener('mousemove', (e) => {
@@ -6066,22 +6289,27 @@
           if (this.activeModal) return;
           this.sound.init();
           if (e.button === 0) {
+            if (this.state === 'SHOOTER_MODE' && !this.firstPerson && !this.isScoped && !this.isMobileDevice) {
+              this.orbitDragging = true;
+              this.isDraggingLook = true;
+              this.lastDragX = e.clientX; this.lastDragY = e.clientY;
+              return;
+            }
             if (!this.isPointerLocked && !this.isMobileDevice && (this.state === 'SHOOTER_MODE' || this.state === 'BULLET_MODE')) {
               this._requestPointerLockSafe();
-            }
-            if (this.state === 'SHOOTER_MODE') {
-              this.fireBullet();
             }
             this.isDraggingLook = true;
             this.lastDragX = e.clientX;
             this.lastDragY = e.clientY;
-          } else if (e.button === 2) {
-            this.mouseDownRight = true;
+          } else if (e.button === 2 && this.state === 'SHOOTER_MODE') {
+            e.preventDefault();
+            if (!this.isPointerLocked && !this.isMobileDevice) this._requestPointerLockSafe();
+            this.fireBullet();
           }
         });
 
         window.addEventListener('mouseup', (e) => {
-          if (e.button === 0) this.isDraggingLook = false;
+          if (e.button === 0) { this.isDraggingLook = false; this.orbitDragging = false; }
           if (e.button === 2) this.mouseDownRight = false;
         });
 
@@ -6189,8 +6417,10 @@
 
           this.keys[e.code] = true;
 
-          if (e.code === 'KeyV' && !e.repeat && this.state === 'SHOOTER_MODE') {
+          if (e.code === 'KeyC' && !e.repeat && this.state === 'SHOOTER_MODE') this._toggleCameraView();
+          if (['KeyV', 'ControlLeft', 'ControlRight'].includes(e.code) && !e.repeat && this.state === 'SHOOTER_MODE') {
             this.scopeToggle = !this.scopeToggle;
+            this.isScoped = this.scopeToggle;
           }
           if (e.code === 'KeyF' && !e.repeat) {
             if (this.state === 'SHOOTER_MODE') this.fireBullet();
@@ -6212,6 +6442,7 @@
           this.keys[e.code] = false;
         });
 
+        window.addEventListener('blur', () => { this.keys = {}; this.isDraggingLook = false; this.orbitDragging = false; this.mouseDownRight = false; });
         window.addEventListener('resize', () => this._onResize());
       }
 
@@ -6814,6 +7045,9 @@
         this._scatterFieldAmmoCrates();
 
         this.score = 0;
+        this.motionVX = this.motionVZ = this.walkBlend = this.runBlend = 0;
+        this.orbitDragging = false; this.orbitYaw = this.orbitPitch = this.orbitBlend = 0;
+        this.soloDownElapsed = 0;
         this.headshots = 0;
         this.shotsFired = 0;
         this.shotsHit = 0;
@@ -6892,6 +7126,8 @@
         const {x: sx, z: sz} = this._findOpenSpawn(px, pz, 1.2, 0, false);
         this.mpLifeId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
         this.mpRespawnTimer = 0;
+        this.motionVX = this.motionVZ = this.walkBlend = this.runBlend = 0;
+        this.orbitDragging = false; this.orbitYaw = this.orbitPitch = this.orbitBlend = 0;
         this.playerPos.set(sx, terrainHeight(sx, sz, this.activeMap), sz);
         this.shooterYaw = Math.atan2(sx, sz);
         this.shooterPitch = -0.02;
@@ -6963,11 +7199,8 @@
         this.timeSinceLastHit = 0;
         this.sound.playPlayerHurt();
 
-        const vig = document.getElementById('damage-vignette');
-        vig.style.opacity = '1';
-        setTimeout(() => {
-          vig.style.opacity = '0';
-        }, 260);
+        this.damagePulse = 1;
+        document.getElementById('damage-vignette').style.opacity = '0.72';
 
         this._updateHUD();
 
@@ -7021,6 +7254,7 @@
             yaw: Number(this.shooterYaw.toFixed(3)),
             pitch: Number(this.shooterPitch.toFixed(3)),
             isWalking: this.walkCycle > 0,
+            isRunning: this.runBlend > 0.5 && this.walkCycle > 0,
             hp: Math.round(this.playerHP),
             maxHp: this.playerMaxHP,
             kills: this.mpKills,
@@ -7094,11 +7328,13 @@
         const makeLeg = (x) => {
           const pivot = new THREE.Group();
           pivot.position.set(x, 0.88, 0);
-          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.84, 0.17), pantsMat);
-          mesh.position.y = -0.42;
-          pivot.add(mesh);
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.17), pantsMat);
+          mesh.position.y = -0.21; mesh.castShadow = true; pivot.add(mesh);
+          const knee = new THREE.Group(); knee.position.y = -0.42;
+          const shin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.42, 0.16), pantsMat);
+          shin.position.y = -0.21; shin.castShadow = true; knee.add(shin); pivot.add(knee);
           root.add(pivot);
-          return { pivot, mesh };
+          return { pivot, mesh, knee };
         };
         const leftLeg = makeLeg(-0.14);
         const rightLeg = makeLeg(0.14);
@@ -7179,6 +7415,7 @@
           if (!rp) {
             rp = this._createRemotePlayerMesh(p.uid, p.callsign, p.platform || 'PC');
             rp.root.position.set(p.x || 0, p.y || 0, p.z || 0);
+            rp.downBaseY = rp.root.position.y;
             this.mpRemotePlayers.set(p.uid, rp);
           }
 
@@ -7186,6 +7423,7 @@
           rp.targetYaw = p.yaw || 0;
           rp.targetPitch = p.pitch || 0;
           rp.isWalking = Boolean(p.isWalking);
+          rp.isRunning = Boolean(p.isRunning);
           const wasBulletActive = rp.bulletActive;
           const nextLife = p.lifeId || '';
           const nextAlive = p.alive !== false;
@@ -7193,6 +7431,8 @@
             rp.root.position.copy(rp.targetPos);
             rp.root.rotation.set(0, rp.targetYaw, 0, 'YXZ');
             rp.downElapsed = 0;
+            rp.walkBlend = 0;
+            rp.reaction = 0;
           } else if (!nextAlive && rp.alive) {
             rp.root.position.copy(rp.targetPos);
             rp.downBaseY = rp.root.position.y;
@@ -7200,7 +7440,10 @@
           }
           rp.lifeId = nextLife;
           rp.alive = nextAlive;
-          rp.hp = typeof p.hp === 'number' ? p.hp : 100;
+          const nextHp = typeof p.hp === 'number' ? p.hp : 100;
+          if (nextAlive && nextHp < rp.hp) rp.reaction = 1;
+          if (!nextAlive || (rp.lifeId && rp.lifeId !== nextLife)) rp.reaction = 0;
+          rp.hp = nextHp;
           rp.maxHp = typeof p.maxHp === 'number' ? p.maxHp : 100;
           rp.callsign = p.callsign || 'PLAYER';
           rp.kills = p.kills || 0;
@@ -7229,11 +7472,24 @@
         this._updateHUD();
       }
 
-      _applyAvatarDownPose(root, yaw, baseY, elapsed) {
-        const t = Math.min(1, Math.max(0, elapsed / 0.65));
-        const e = t*t*(3-2*t);
-        root.rotation.set(-Math.PI*0.5*e, yaw, 0, 'YXZ');
-        root.position.y = baseY + 0.23*e;
+      _applyAvatarDownPose(root, yaw, baseY, elapsed, parts) {
+        const smooth = v => { const t = Math.max(0,Math.min(1,v)); return t*t*(3-2*t); };
+        const kneel = smooth(elapsed/0.32);
+        const settle = smooth((elapsed-0.32)/0.46);
+        const rest = smooth((elapsed-0.78)/0.52);
+        // A stylized keyframed transition; no injury geometry or physics-driven body damage.
+        root.rotation.set(-Math.PI*0.5*rest, yaw, -Math.PI*0.5*settle*(1-rest), 'YXZ');
+        root.position.y = baseY - 0.42*kneel*(1-settle) + 0.24*settle;
+        if (parts) {
+          for (const leg of [parts.leftLeg,parts.rightLeg]) {
+            if (!leg) continue;
+            const pivot = leg.pivot || leg;
+            pivot.rotation.x = -0.65*kneel*(1-settle);
+            const knee = leg.knee || pivot.userData.knee;
+            if (knee) knee.rotation.x = 1.35*kneel*(1-settle);
+          }
+          for (const arm of [parts.leftArm,parts.rightArm]) if (arm?.pivot) arm.pivot.rotation.x = 0.25*settle;
+        }
       }
 
       _updateMultiplayerSession(dt) {
@@ -7259,15 +7515,23 @@
         this.mpRemotePlayers.forEach((rp) => {
           if (rp.alive) {
             rp.root.position.lerp(rp.targetPos, lerpAlpha);
-            rp.root.rotation.y = rp.targetYaw;
-            const stride = rp.isWalking ? Math.sin(this.worldTime * 9) * 0.45 : 0;
+            const yawError = Math.atan2(Math.sin(rp.targetYaw-rp.root.rotation.y), Math.cos(rp.targetYaw-rp.root.rotation.y));
+            rp.root.rotation.y += yawError * lerpAlpha;
+            rp.walkBlend = (rp.walkBlend || 0) + ((rp.isWalking ? 1 : 0) - (rp.walkBlend || 0)) * lerpAlpha;
+            rp.runBlend = (rp.runBlend || 0) + ((rp.isRunning ? 1 : 0) - (rp.runBlend || 0)) * lerpAlpha;
+            rp.walkPhase = (rp.walkPhase || 0) + dt * (8 + 5*rp.runBlend);
+            rp.reaction = Math.max(0, (rp.reaction || 0) - dt*3.6);
+            const stride = Math.sin(rp.walkPhase) * (0.43+0.26*rp.runBlend) * rp.walkBlend;
+            rp.root.rotation.z = Math.sin(rp.reaction*Math.PI) * 0.10;
             rp.parts.leftLeg.pivot.rotation.x = stride;
             rp.parts.rightLeg.pivot.rotation.x = -stride;
+            rp.parts.leftLeg.knee.rotation.x = Math.max(0,-Math.sin(rp.walkPhase))*(0.28+0.42*rp.runBlend)*rp.walkBlend;
+            rp.parts.rightLeg.knee.rotation.x = Math.max(0,Math.sin(rp.walkPhase))*(0.28+0.42*rp.runBlend)*rp.walkBlend;
+            rp.parts.leftArm.pivot.rotation.x = -stride * 0.6;
+            rp.parts.rightArm.pivot.rotation.x = stride * 0.6;
           } else {
-            rp.downElapsed = Math.min(0.65, rp.downElapsed + dt);
-            this._applyAvatarDownPose(rp.root, rp.targetYaw, rp.downBaseY, rp.downElapsed);
-            rp.parts.leftLeg.pivot.rotation.x *= Math.exp(-8*dt);
-            rp.parts.rightLeg.pivot.rotation.x *= Math.exp(-8*dt);
+            rp.downElapsed = Math.min(1.3, rp.downElapsed + dt);
+            this._applyAvatarDownPose(rp.root, rp.targetYaw, rp.downBaseY, rp.downElapsed, rp.parts);
           }
           if (rp.bulletActive) {
             rp.bulletMesh.position.lerp(rp.bulletTargetPos, lerpAlpha);
